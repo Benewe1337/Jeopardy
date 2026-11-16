@@ -84,9 +84,10 @@
       $('meta').textContent = `${cur.category} – ${cur.value}`;
       $('q').textContent = cur.q;
       const img = $('img');
-      img.hidden = !cur.img;
-      if (cur.img && img.getAttribute('src') !== cur.img) img.src = cur.img;
-      if (!cur.img) img.removeAttribute('src');
+      const imgSrc = J.safeImg(cur.img);
+      img.hidden = !imgSrc;
+      if (imgSrc && img.getAttribute('src') !== imgSrc) img.src = imgSrc;
+      if (!imgSrc) img.removeAttribute('src');
       img.classList.toggle('pixel', !!cur.pixel && cur.pixel.mode !== 'zoom');
       img.classList.toggle('zoomed', !!cur.pixel && cur.pixel.mode === 'zoom');
       // Bei Schätzfrage und Reihenfolge zeigt die Ergebnisliste die Lösung
@@ -381,7 +382,7 @@
       btn.dataset.kind = j.id;
       btn.disabled = !!block;
       btn.title = block || j.desc;
-      btn.innerHTML = `<span class="joker-icon">${j.icon}</span><span class="joker-name">${jokerArmed === j.id ? 'Nochmal tippen' : j.name}</span>`;
+      btn.innerHTML = `<span class="joker-icon">${J.escapeHtml(j.icon)}</span><span class="joker-name">${J.escapeHtml(jokerArmed === j.id ? 'Nochmal tippen' : j.name)}</span>`;
       btn.addEventListener('click', () => {
         if (j.id === 'pass') { passOpen = !passOpen; renderJokers(clueKey); return; }
         if (jokerArmed === j.id) { sendJoker(j.id); renderJokers(clueKey); return; }
@@ -519,7 +520,7 @@
         b.className = 'pick';
         if (team) {
           const n = (members[p.id] || []).length;
-          b.innerHTML = `<span class="pick-name"><i class="team-dot" style="--team:${p.color}"></i>${J.escapeHtml(p.name)}</span>` +
+          b.innerHTML = `<span class="pick-name"><i class="team-dot" style="--team:${J.safeColor(p.color)}"></i>${J.escapeHtml(p.name)}</span>` +
             `<span class="pick-count">${n}/${last.teamSize}</span>`;
         } else {
           b.textContent = p.name;
