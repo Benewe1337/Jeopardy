@@ -166,7 +166,8 @@ test('Zufall: Host-Einstellung geht vor dem Set; Felder bleiben pro Runde stabil
   assert.equal(first.length, 1);
   assert.equal(J.dd.ensureRandom(g.set, g.st, 0), false, 'schon gelost');
   assert.deepEqual(plain(J.dd.cells(g.set, g.st, 0)), first);
-  assert.equal(J.dd.isDd(g.set, g.st, 0, 1, 2), false, 'Zufall ersetzt markierte Felder');
+  // Die Losung darf zufällig dasselbe Feld treffen (1 von 24); sonst darf das markierte nicht mehr zählen
+  if (first[0].cat !== 1 || first[0].row !== 2) assert.equal(J.dd.isDd(g.set, g.st, 0, 1, 2), false, 'Zufall ersetzt markierte Felder');
   assert.equal(J.dd.ensureRandom(g.set, g.st, 1), true);
   assert.equal(J.dd.cells(g.set, g.st, 1).length, 2);
   // Host schaltet aus
