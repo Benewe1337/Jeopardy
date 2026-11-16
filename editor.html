@@ -27,6 +27,7 @@
         <button class="small" id="setNew" type="button">＋ Neu</button>
         <button class="small" id="setDup" type="button">Duplizieren</button>
         <button class="small" id="setRename" type="button">Umbenennen</button>
+        <button class="small" id="setCopy" type="button">Kategorien kopieren / mischen…</button>
         <button class="small ghost" id="setDel" type="button">Löschen</button>
         <span class="set-source" id="setSource"></span>
       </div>
@@ -36,6 +37,34 @@
         <button class="primary small" type="submit">Entsperren</button>
         <span class="hint" id="pwError"></span>
       </form>
+    </section>
+
+    <section class="card setmix" id="mixPanel" hidden>
+      <div class="row setbar-row">
+        <strong>Kategorien kopieren / mischen</strong>
+        <div class="spacer"></div>
+        <button class="small ghost" id="mixClose" type="button">Schließen</button>
+      </div>
+      <div class="row setbar-row">
+        <label for="mixSource">Aus Set</label>
+        <select id="mixSource"></select>
+        <button class="small" id="mixFile" type="button">Aus Datei…</button>
+        <input type="file" id="mixFileInput" accept="application/json,.json" hidden>
+      </div>
+      <div class="mix-cats" id="mixCats"></div>
+      <div class="row setbar-row">
+        <button class="small" id="mixAdd" type="button">Zur Auswahl hinzufügen</button>
+        <span class="hint" id="mixError"></span>
+      </div>
+      <div class="mix-picks" id="mixPicks"></div>
+      <div class="row setbar-row">
+        <label for="mixRound">Einfügen in</label>
+        <select id="mixRound"><option value="0">Runde 1</option><option value="1">Runde 2</option></select>
+        <label for="mixSlot">ab Platz</label>
+        <select id="mixSlot"></select>
+        <button class="small primary" id="mixInsert" type="button">In dieses Set kopieren</button>
+        <button class="small" id="mixCreate" type="button">Als neues Set mischen</button>
+      </div>
     </section>
 
     <input id="title" class="title-field" placeholder="Titel des Spiels">
@@ -51,5 +80,6 @@
   <script src="js/common.js"></script>
   <script src="js/sets.js"></script>
   <script src="js/editor.js"></script>
+  <script src="js/setmix.js"></script>
 </body>
 </html>

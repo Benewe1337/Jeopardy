@@ -67,7 +67,7 @@
       sets.forEach((s) => selectEl.add(new Option(s.name, s.id, false, s.id === active)));
     }
     selectEl.disabled = !ready;
-    ['setNew', 'setDup', 'setRename', 'setDel'].forEach((id) => ($(id).disabled = !ready));
+    ['setNew', 'setDup', 'setRename', 'setDel', 'setCopy'].forEach((id) => ($(id).disabled = !ready));
     sourceEl.classList.remove('error');
     sourceEl.textContent = !ready ? '🔒 Gespeicherte Sets gesperrt'
       : lib.kind === 'server' ? '☁ Auf dem Server gespeichert' : '💾 Nur in diesem Browser gespeichert';
@@ -342,13 +342,7 @@
     const file = fileInput.files[0];
     if (!file) return;
     try {
-      const data = JSON.parse(await file.text());
-      if (!data || !Array.isArray(data.rounds)) throw new Error('Kein gültiges Fragenset');
-      // Unbekannte Fragearten (Datei ist neuer als diese Seite) nicht still verwerfen
-      const unknown = data.rounds.flatMap((r) => (r && r.categories) || []).flatMap((c) => (c && c.clues) || [])
-        .some((cl) => cl && cl.kind && !J.CLUE_KINDS.includes(cl.kind));
-      if (unknown) throw new Error('Das Set nutzt Fragearten, die diese Seite noch nicht kennt. Bitte die Seite neu laden (Strg+Shift+R) und nochmal importieren.');
-      const imported = J.normalizeSet(data);
+      const imported = J.parseSetFile(await file.text(), file.size);
       if (lib) {
         // Import legt ein neues Set an, statt das aktive zu überschreiben
         const base = file.name.replace(/\.json$/i, '');
@@ -370,6 +364,18 @@
     persist();
     render();
   });
+
+  // Schnittstelle für die Kategorien-Werkstatt (js/setmix.js)
+  J.editor = {
+    get set() { return set; },
+    get round() { return round; },
+    get lib() { return lib; },
+    get activeId() { return active; },
+    activeName,
+    guard,
+    createSet,
+    replaceSet(next) { set = next; persist(); render(); },
+  };
 
   render();
   renderSetBar();
