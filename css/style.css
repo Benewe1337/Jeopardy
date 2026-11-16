@@ -1546,3 +1546,14 @@ body.tv .buzz-area, body.tv .react-bar { display: none !important; }
 .mix-picks { display: flex; flex-wrap: wrap; gap: 6px; }
 .mix-pick { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); }
 .mix-pick button { padding: 0 6px; }
+
+/* ---------- Spielstand sichern & fortsetzen (Host) ---------- */
+.game-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line, rgba(128, 128, 128, .25)); }
+.game-item small { opacity: .75; }
+#gamePwForm { display: grid; gap: 8px; margin: 8px 0; }
+.readonly-overlay { position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(0, 0, 0, .72); }
+.readonly-overlay[hidden], .readonly-bar[hidden] { display: none; }
+.ro-card { max-width: 460px; background: var(--bg); color: var(--text); border: 1px solid var(--line-strong); border-radius: 14px; padding: 24px; display: grid; gap: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, .5); }
+.ro-card h2 { margin: 0; font-size: 20px; }
+.readonly-bar { position: fixed; left: 0; right: 0; top: 0; z-index: 39; display: flex; gap: 12px; align-items: center; justify-content: center; padding: 8px 12px; background: #b45309; color: #fff; font-weight: 600; }
+body.readonly .host-page { filter: grayscale(.6); }

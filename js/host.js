@@ -48,7 +48,9 @@
   }
 
   function commit() {
+    if (J.gameSync.readonly) return; // Spiel läuft auf einem anderen Gerät: nichts mehr schreiben/senden
     J.saveState(state);
+    J.gameSync.touch();
     render();
     broadcast();
   }
@@ -860,6 +862,9 @@
   const turn = J.loadTurn();
   const joinUrl = J.joinUrl(location.href, code, turn);
   const peerOptions = () => ({ config: J.iceConfig(turn, window.JEOP_FORCE_RELAY) });
+  // Spielstand-Sicherung (Relay): liefert dem Sync den aktuellen Stand
+  J.gameSync.attach(() => ({ room: code, state, set }));
+  J.gameSync.onStatus((s) => { if (s.kind === 'readonly' && peer && !peer.destroyed) peer.destroy(); });
   $('code').textContent = code;
   $('link').textContent = joinUrl;
   // QR-Code zum Beitrittslink (offline erzeugt); Klick vergrößert ihn für Handy-Kameras
@@ -1016,8 +1021,8 @@
       setStatus('PeerJS nicht geladen (offline?)', false);
       return;
     }
-    peer = J.net.createPeer(J.peerId(code), peerOptions());
-    peer.on('open', () => setStatus('online', true));
+    peer = J.net.createPeer(J.peerId(code), { ...peerOptions(), takeover: J.gameSync.takeover() });
+    peer.on('open', () => { J.gameSync.clearTakeover(); setStatus('online', true); });
     peer.on('connection', (conn) => {
       // Selbsttest-Verbindung: nur bestätigen, nicht als Spieler zählen
       if (conn.metadata && conn.metadata.probe) {
@@ -1043,7 +1048,10 @@
       setTimeout(() => { if (!peer.destroyed && peer.disconnected) { try { peer.reconnect(); } catch (e) {} } }, 2000);
     });
     peer.on('error', (err) => {
-      if (err.type === 'unavailable-id') {
+      if (err.type === 'superseded') {
+        J.gameSync.markReadonly();
+        peer.destroy();
+      } else if (err.type === 'unavailable-id') {
         // Alte Sitzung (z. B. nach Reload) hält die ID noch kurz fest.
         setStatus('Raumcode noch belegt – neuer Versuch…', false);
         peer.destroy();
@@ -1139,5 +1147,9 @@
   window.addEventListener('beforeunload', () => { if (peer) peer.destroy(); });
 
   render();
-  J.net.ready.then(startPeer);
+  // Vor dem Verbinden klären, ob ein gesichertes Spiel zu diesem Raum gehört (nur Relay)
+  J.net.ready
+    .then((m) => (m === 'relay' ? Promise.race([J.gameUI.start(code), new Promise((r) => setTimeout(r, 5000))]) : null))
+    .catch(() => {})
+    .then(startPeer);
 })();

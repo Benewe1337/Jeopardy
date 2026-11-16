@@ -434,23 +434,46 @@
   const loadSet = () => normalizeSet(load(SET_KEY, defaultSet));
   const saveSet = (s) => save(SET_KEY, s);
 
-  function loadState() {
-    const s = load(STATE_KEY, defaultState);
-    const d = defaultState();
-    return {
+  const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
+  // Rohdaten (localStorage, Server-Spielstand) → gültiger State. Rein, ohne Seiteneffekte.
+  // `resume`: nicht wiederbelebbare Laufzeit-Dinge verwerfen (Timer, offenes Buzzer-Fenster, Intro).
+  function normalizeState(raw, { resume = false } = {}) {
+    const s = isObj(raw) ? raw : {};
+    const players = (Array.isArray(s.players) ? s.players : [])
+      .filter((p) => isObj(p) && (typeof p.id === 'string' || typeof p.id === 'number') && p.id !== '')
+      .map((p) => ({ ...p, id: String(p.id), name: String(p.name ?? ''), score: Number.isFinite(Number(p.score)) ? Number(p.score) : 0 }));
+    const used = Array.isArray(s.used) && s.used.length === ROUNDS
+      ? Array.from({ length: ROUNDS }, (_, r) => Array.from({ length: CATS }, (_, c) =>
+        Array.from({ length: ROWS }, (_, w) => !!(s.used[r] && s.used[r][c] && s.used[r][c][w]))))
+      : emptyUsed();
+    const history = (Array.isArray(s.history) ? s.history : []).filter(isObj);
+    const out = {
       round: s.round === 1 ? 1 : 0,
-      used: Array.isArray(s.used) && s.used.length === ROUNDS ? s.used : d.used,
-      players: Array.isArray(s.players) ? s.players : [],
-      current: s.current || null,
+      used,
+      players,
+      current: isObj(s.current) ? s.current : null,
       turn: typeof s.turn === 'string' ? s.turn : null,
-      stats: s.stats && typeof s.stats === 'object' ? s.stats : {},
-      personStats: s.personStats && typeof s.personStats === 'object' ? s.personStats : {},
+      stats: isObj(s.stats) ? s.stats : {},
+      personStats: isObj(s.personStats) ? s.personStats : {},
       mode: s.mode === 'team' ? 'team' : 'single',
       teamSize: clampTeamSize(s.teamSize),
       finished: !!s.finished,
-      history: Array.isArray(s.history) ? s.history : [],
+      history,
     };
+    if (resume) {
+      out.history = history.map((h) => (isObj(h.current) ? { ...h, current: stripLive(h.current) } : h));
+      if (out.current) out.current = stripLive(out.current);
+    }
+    return out;
   }
+  // Timer und Buzzer-Fenster überleben keinen Neustart: Gewinner bleibt, offen/„scharf“ wird geschlossen
+  function stripLive(cur) {
+    const c = { ...cur, timer: null };
+    if (isObj(c.buzz)) c.buzz = { open: false, winner: c.buzz.winner || null };
+    return c;
+  }
+  const loadState = () => normalizeState(load(STATE_KEY, defaultState));
   const saveState = (s) => save(STATE_KEY, s);
 
   function roomCode() {
@@ -1055,8 +1078,8 @@
     CLUE_KINDS, isSpecialKind, parseNumber, estimateWinners, orderItems, shufflePerm, isPerm, orderCorrect, JOKERS, jokerInfo, jokerBlock, whoIsUp, hintPattern, judgePoints,
     APP_VERSION, CATS, ROWS, ROUNDS, SET_KEY,
     pointsFor, defaultSet, normalizeSet, defaultState,
-    loadSet, saveSet, loadState, saveState,
-    roomCode, newRoomCode, peerId, publicState, escapeHtml, safeColor, safeNum, renderScores,
+    loadSet, saveSet, loadState, normalizeState, saveState,
+    roomCode, newRoomCode, ROOM_KEY, peerId, publicState, escapeHtml, safeColor, safeNum, renderScores,
     THEMES, getTheme, applyTheme, setTheme,
     penaltyFor, stealFor, sfx, startTimerMusic, stopTimerMusic, timerMusicOn, soundOn, setSoundOn, unlockAudio, audioUnlocked, renderTimer,
     TIMER_MS: 15000,
