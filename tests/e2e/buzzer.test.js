@@ -1,7 +1,7 @@
 // Buzzer: Timer, Wartezustand, Frühstart-Sperre, Anti-Spam, fairer Buzzer, Klauen
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { startEnv, openHost, joinPlayer, scoresOf } = require('./helpers');
+const { startEnv, openHost, joinPlayer, scoresOf, trackUi, uiSeen, uiReset, uiSeq, uiText, trackText, textSeen } = require('./helpers');
 
 let env;
 test.before(async () => {
@@ -22,6 +22,9 @@ test('Buzzer-Ablauf mit drei Spielern', async (t) => {
   const ben = await joinPlayer(env, code, { pick: 'Ben' });
   const cem = await joinPlayer(env, code, { pick: 'Cem' });
   await host.waitForFunction(() => document.querySelectorAll('#players .device').length === 3);
+  // Kurzlebige Zustände werden aufgezeichnet statt per Polling erhascht (siehe helpers.trackUi)
+  for (const pg of [anna, ben, cem]) await trackUi(pg);
+  await trackText(host, '#buzzStatus');
 
   await host.locator('.cell.val').first().click();
   await anna.waitForSelector('#overlay.show');
@@ -38,23 +41,26 @@ test('Buzzer-Ablauf mit drei Spielern', async (t) => {
 
   await t.test('Drücken auf den grauen Buzzer sperrt kurz', async () => {
     await anna.click('#buzzer');
-    await anna.waitForSelector('#buzzer.locked');
-    assert.equal(await anna.textContent('#buzzer'), 'Zu früh!');
-    await anna.waitForSelector('#buzzer.wait', { timeout: 3000 });
+    await uiSeen(anna, '#buzzer.locked');
+    assert.equal(await uiText(anna, '#buzzer.locked'), 'Zu früh!');
+    await anna.waitForSelector('#buzzer.wait'); // Sperre läuft von selbst ab
   });
 
   await t.test('Timer läuft bei allen und meldet das Ende', async () => {
     await host.click('#timerBtn');
-    await anna.waitForSelector('#timerBox:not([hidden])');
-    await anna.waitForFunction(() => window.__sfx.includes('timeup'), null, { timeout: 6000 });
-    assert.ok(await anna.isHidden('#timerBox'));
+    await uiSeen(anna, '#timerBox:shown');
+    await anna.waitForFunction(() => window.__sfx.includes('timeup'));
+    await anna.waitForSelector('#timerBox', { state: 'hidden' });
   });
 
   await t.test('Nach „falsch“ öffnet der Buzzer erst nach einer Pause', async () => {
+    await uiReset(anna);
     await host.locator('.jrow').nth(1).locator('.red').click(); // Ben falsch
-    await host.waitForFunction(() => document.getElementById('buzzStatus').textContent.includes('gleich'));
-    assert.ok(await anna.isVisible('#buzzer.wait'), 'direkt nach ✗ noch grau');
-    await anna.waitForSelector('#buzzer.live', { timeout: 3000 });
+    await textSeen(host, '#buzzStatus', /gleich/);
+    // Reihenfolge statt Momentaufnahme: erst grau (Pause), dann scharf – nie sofort scharf
+    await uiSeen(anna, '#buzzer.live');
+    const seq = (await uiSeq(anna)).filter((k) => k === '#buzzer.wait' || k === '#buzzer.live');
+    assert.equal(seq[0], '#buzzer.wait', 'direkt nach ✗ noch grau: ' + seq.join(','));
     assert.ok(await ben.isHidden('#buzzer'), 'Ben lag falsch und darf nicht mehr');
     assert.equal(await anna.textContent('#buzzInfo'), 'Klauen bringt +50');
   });
@@ -65,15 +71,17 @@ test('Buzzer-Ablauf mit drei Spielern', async (t) => {
     // Erst abwarten, dass der Buzzer nach dem Rückgängig wieder zu ist – sonst sieht man über das
     // langsamere Relay kurz noch den alten offenen Buzzer und buzzert in eine beendete Runde
     await anna.waitForSelector('#buzzer.wait');
-    await host.locator('.jrow').nth(1).locator('.red').click();
-    // Cem hämmert schon während der Pause ununterbrochen auf den Buzzer
+    // Cem hämmert ununterbrochen – und zwar schon BEVOR die neue Runde startet. Würde er erst danach
+    // anfangen, könnte die Pause unter Last schon vorbei sein, und sein erster Druck wäre ein gültiger.
+    await cem.waitForSelector('#buzzer.wait');
     await cem.evaluate(() => {
       window.__spam = setInterval(() => {
         document.getElementById('buzzer').dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
       }, 60);
     });
+    await host.locator('.jrow').nth(1).locator('.red').click();
     await buzzCalmly(anna, 300);
-    await host.waitForFunction(() => document.querySelector('.jrow.buzzed'), null, { timeout: 5000 });
+    await host.waitForFunction(() => document.querySelector('.jrow.buzzed'));
     await cem.evaluate(() => clearInterval(window.__spam));
     assert.equal(await host.textContent('.jrow.buzzed .name'), '⚡ Anna');
     await cem.waitForFunction(() => document.getElementById('buzzInfo').textContent.includes('Anna'));
@@ -85,19 +93,26 @@ test('Buzzer-Ablauf mit drei Spielern', async (t) => {
     await anna.waitForSelector('#buzzer.wait'); // Buzzer zu abwarten (siehe oben)
     await cem.waitForSelector('#buzzer.wait');
     await host.locator('.jrow').nth(1).locator('.red').click();
-    // Anna: Uhr manipulieren → ihre gemessene Reaktion ist 0,9 s langsamer
-    await anna.evaluate(() => {
-      const o = performance.now.bind(performance); let off = 0;
-      performance.now = () => o() + off; window.__slow = () => { off = 900; };
+    // Reaktionszeiten fest vorgeben statt echte Zeit zu messen: die Uhr jeder Seite steht still und
+    // springt erst nach dem Scharfwerden auf den gewünschten Abstand (Anna 900 ms, Cem 300 ms).
+    const freeze = (pg) => pg.evaluate(() => {
+      const base = performance.now(); let off = 0;
+      performance.now = () => base + off;
+      window.__react = (ms) => { off = ms; };
     });
+    await freeze(anna);
+    await freeze(cem);
     await anna.waitForSelector('#buzzer.live');
     await cem.waitForSelector('#buzzer.live');
-    await anna.evaluate(() => window.__slow());
-    await anna.waitForTimeout(200);
-    await anna.click('#buzzer'); // kommt zuerst an
-    await cem.waitForTimeout(150);
-    await cem.click('#buzzer'); // später, aber schneller reagiert
-    await host.waitForFunction(() => document.querySelector('.jrow.buzzed'), null, { timeout: 5000 });
+    await anna.evaluate(() => window.__react(900));
+    await cem.evaluate(() => window.__react(300));
+    // Beide Drücke direkt hintereinander (ohne Playwrights Klick-Prüfungen, die unter Last lange dauern
+    // und Cem aus dem Zeitfenster des Hosts fallen ließen): Anna kommt zuerst an, reagiert aber langsamer
+    const press = (pg) => pg.evaluate(() => document.getElementById('buzzer')
+      .dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true })));
+    await press(anna);
+    await press(cem);
+    await host.waitForFunction(() => document.querySelector('.jrow.buzzed'));
     assert.equal(await host.textContent('.jrow.buzzed .name'), '⚡ Cem');
     assert.match(await host.textContent('#buzzStatus'), /Cem hat gebuzzert.*danach: Anna/);
     await anna.waitForFunction(() => document.getElementById('buzzInfo').textContent.startsWith('⚡ Cem war schneller'));

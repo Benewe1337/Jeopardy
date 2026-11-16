@@ -2,14 +2,13 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
-const { TRANSPORT, HOST_PASSWORD, startEnv } = require('./helpers');
+const { TRANSPORT, HOST_PASSWORD, startEnv, trackText, textSeen, textMark } = require('./helpers');
 
 const SERVER = TRANSPORT === 'relay';
 let env;
 test.before(async () => { env = await startEnv(); });
 test.after(async () => { await env.stop(); });
 
-const settle = (page) => page.waitForTimeout(1200);
 const options = (page) => page.$$eval('#setSelect option', (els) => els.map((o) => (o.selected ? '*' : '') + o.textContent));
 const cats = (page) => page.$$eval('.ed-cat > input', (els) => els.map((e) => e.value));
 
@@ -28,7 +27,6 @@ async function newSet(page, name, firstCat) {
   await page.click('#setNew');
   await page.waitForFunction((n) => document.getElementById('setSelect').selectedOptions[0]?.textContent === n, name);
   await page.fill('.ed-cat input', firstCat);
-  await settle(page);
 }
 async function openPanel(page, source) {
   if (await page.isHidden('#mixPanel')) await page.click('#setCopy');
@@ -45,6 +43,8 @@ test('Kategorien kopieren, mischen, exportieren und importieren', async (t) => {
   await ed.reload();
   await unlock(ed);
   await ready(ed);
+  await trackText(ed, '#saved');
+  let savedMark = 0;
 
   // Set „Quelle“ mit Spezialfrage, Notiz und Bild in der ersten Kategorie
   await newSet(ed, 'Quelle', 'Tiere');
@@ -54,7 +54,6 @@ test('Kategorien kopieren, mischen, exportieren und importieren', async (t) => {
   await ed.locator('.ed-clue').nth(1).locator('input[placeholder="Bild-Link (optional)"]').fill('https://example.com/t.png');
   await ed.locator('.ed-clue').nth(1).locator('input[placeholder="Bild-Link (optional)"]').dispatchEvent('change');
   await ed.locator('.ed-cat > input').nth(1).fill('Pflanzen');
-  await settle(ed);
 
   await newSet(ed, 'Ziel', 'Eigene');
 
@@ -77,7 +76,6 @@ test('Kategorien kopieren, mischen, exportieren und importieren', async (t) => {
     assert.equal(await col.locator('select.ed-kind').inputValue(), 'choice');
     assert.equal(await col.locator('.note-field').inputValue(), 'Notiz-Test');
     assert.equal(await col.locator('.ed-img img').getAttribute('src'), 'https://example.com/t.png');
-    await settle(ed);
   });
 
   await t.test('Mischen legt neues Set aus mehreren Sets an', async () => {
@@ -94,7 +92,6 @@ test('Kategorien kopieren, mischen, exportieren und importieren', async (t) => {
     await ed.click('.tabs button[data-round="0"]');
     assert.deepEqual((await cats(ed)).slice(0, 3), ['Pflanzen', 'Eigene', 'Kategorie 3']);
     assert.deepEqual(await options(ed), ['Mein Fragenset', '*Mischung', 'Quelle', 'Ziel']);
-    await settle(ed);
   });
 
   await t.test('Mischen ohne Auswahl und Überlauf zeigen eine Meldung', async () => {
@@ -143,13 +140,15 @@ test('Kategorien kopieren, mischen, exportieren und importieren', async (t) => {
     await ed.click('#mixAdd');
     await ed.selectOption('#mixRound', '0');
     await ed.selectOption('#mixSlot', { value: '4' });
+    savedMark = await textMark(ed, '#saved');
     await ed.click('#mixInsert');
     await ed.waitForFunction(() => document.querySelectorAll('.ed-cat > input')[4].value === 'Aus Datei');
   });
 
   if (SERVER) {
     await t.test('Kopierte Kategorien liegen auf dem Server (anderes Gerät)', async () => {
-      await settle(ed);
+      // Die Speicherung läuft verzögert im Hintergrund: auf die Bestätigung der Seite warten, nicht raten
+      await textSeen(ed, '#saved', /Auf dem Server gespeichert/, savedMark);
       const other = await env.page();
       await other.goto(env.base + '/editor.html');
       await unlock(other);

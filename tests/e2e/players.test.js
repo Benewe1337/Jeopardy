@@ -1,7 +1,7 @@
 // Beitreten: leerer Raum, eindeutige Namen, Gerät trennen, Zuschauer, TV-Ansicht
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { startEnv, openHost, joinPlayer } = require('./helpers');
+const { startEnv, openHost, joinPlayer, countRenders, waitForRenders } = require('./helpers');
 
 let env;
 test.before(async () => { env = await startEnv(); });
@@ -31,34 +31,45 @@ test('Ein Name gehört genau einem Gerät', async (t) => {
 
   let winner, loser;
   await t.test('Gleichzeitig denselben Namen wählen: nur einer bekommt ihn', async () => {
-    // Beide Klicks ohne Wartezeit auslösen (Playwright würde auf den ausgegrauten Knopf warten)
-    const clickAnna = (pg) => pg.evaluate(() => [...document.querySelectorAll('.pick')].find((b) => b.textContent === 'Anna').click());
+    // Beide Geräte melden sich gleichzeitig für Anna an. Ob der zweite Klick den Namen noch frei sieht, hängt
+    // von der Laufzeit ab (unter Last ist der Knopf beim zweiten Gerät oft schon ausgegraut). Damit der Test
+    // nicht davon abhängt, wird der Knopf zwangsweise freigegeben: geprüft wird die Zusage des Hosts
+    // „ein Name, ein Gerät“, nicht die Knopf-Sperre.
+    const clickAnna = (pg) => pg.evaluate(() => {
+      const btn = [...document.querySelectorAll('.pick')].find((b) => b.textContent === 'Anna');
+      btn.disabled = false;
+      btn.click();
+    });
     await Promise.all([clickAnna(a), clickAnna(b)]);
     await host.waitForFunction(() => document.querySelectorAll('#players .device').length === 1);
-    // Auf den Endzustand warten statt fester Zeit (CI ist manchmal langsamer; übers Relay blendet
-    // die Auswahl nach dem Klick kurz aus und kommt beim Verlierer zurück): genau einer ist drin,
-    // der andere sieht die Meldung
-    const state = (pg) => pg.evaluate(() => ({ in: document.getElementById('picker').hidden, err: !!document.getElementById('pickerError').textContent }));
-    for (let i = 0; i < 100; i++) {
-      const [sa, sb] = [await state(a), await state(b)];
-      if ((sa.in && !sb.in && sb.err) || (sb.in && !sa.in && sa.err)) break;
-      await a.waitForTimeout(100);
-    }
-    const aOk = await a.isHidden('#picker');
-    assert.notEqual(aOk, await b.isHidden('#picker'));
-    [winner, loser] = aOk ? [a, b] : [b, a];
+    // Auf den Endzustand warten (ohne feste Zeit): der Verlierer ist der, bei dem die Auswahl mit der
+    // Meldung zurückkommt. Übers Relay blendet sie nach dem Klick kurz aus; der Gewinner bleibt drin.
+    const rejected = (pg) => pg.waitForFunction(() => !document.getElementById('picker').hidden
+      && /anderen Gerät/.test(document.getElementById('pickerError').textContent)).then(() => pg);
+    const aWait = rejected(a); const bWait = rejected(b);
+    loser = await Promise.race([aWait, bWait]);
+    winner = loser === a ? b : a;
+    // die nicht gewählte Wartebedingung wird mit dem Schließen der Seite abgebrochen
+    for (const w of [aWait, bWait]) w.catch(() => {});
+    assert.ok(await winner.isHidden('#picker'));
     assert.match(await loser.textContent('#pickerError'), /anderen Gerät/);
+    // die Belegungsliste (state) kommt unabhängig von der Meldung beim Verlierer an
+    await loser.waitForSelector('.pick.taken:text-is("Anna")');
     assert.ok(await loser.locator('.pick.taken:text-is("Anna")').isDisabled());
     await loser.click('.pick:text-is("Ben")');
     await host.waitForFunction(() => document.querySelectorAll('#players .device').length === 2);
   });
 
   await t.test('Dasselbe Gerät behält seinen Namen nach Reload', async () => {
+    // Der Host zeichnet die Spielerliste bei jeder Verbindungsänderung neu: erst weiter, wenn er die
+    // erneute Verbindung dieses Geräts verarbeitet hat (statt eine feste Zeit zu raten)
+    const before = await countRenders(host);
     await winner.reload();
     await winner.waitForSelector('#board:not([hidden])');
-    await winner.waitForTimeout(1200);
+    await waitForRenders(host, before);
+    await host.waitForFunction(() => document.querySelectorAll('#players .device').length === 2);
+    await winner.waitForFunction(() => document.getElementById('me').textContent === 'Du: Anna');
     assert.ok(await winner.isHidden('#picker'));
-    assert.equal(await winner.textContent('#me'), 'Du: Anna');
   });
 
   await t.test('Host kann ein Gerät trennen, der Name wird frei', async () => {
