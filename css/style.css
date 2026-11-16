@@ -1556,7 +1556,6 @@ body.tv .buzz-area, body.tv .react-bar { display: none !important; }
 .cat-preview { margin: 4px 0 2px; padding-left: 22px; font-size: .92em; }
 .catalog .cat-auto { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 #catMsg.error { color: var(--bad, #e5484d); }
-=======
 /* ---------- Final Jeopardy ---------- */
 .final-overlay {
   position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: flex-start;
@@ -1627,4 +1626,3 @@ body.tv .buzz-area, body.tv .react-bar { display: none !important; }
 .ed-final-grid textarea { min-height: 64px; resize: vertical; }
 .ed-final-q, .ed-final-note { grid-column: 1 / -1; }
 @media (max-width: 700px) { .ed-final-grid { grid-template-columns: 1fr; } }
->>>>>>> crew/T-8
