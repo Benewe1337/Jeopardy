@@ -73,6 +73,7 @@
     // Gleiche Daten wie bei den Spielern (inkl. Kategoriename) – sonst bleibt der Titel leer
     J.renderIntro($('intro'), J.publicState(set, state).intro,
       state.round, Array.from({ length: J.ROWS }, (_, row) => J.pointsFor(state.round, row)));
+    $('introBtn').hidden = !rule('intro');
     $('introBtn').disabled = !!state.current || !!state.intro;
     J.renderTurn($('turnBanner'), state.players, rule('turn') ? state.turn : null);
     $('r0').className = state.round === 0 ? 'primary' : '';
@@ -80,6 +81,7 @@
     $('undo').disabled = state.history.length === 0;
     if (J.fjHost) J.fjHost.render();
     renderOptions();
+    J.gameSync.setEnabled(rule('backup'));
   }
 
   function renderBoard() {
@@ -127,7 +129,7 @@
     // zuerst erkennt, darf antworten (sonst könnte der Spieler am Zug einfach abwarten)
     // Daily Double: nur mit Spielern (sonst gibt es niemanden, der setzt) – dann kein Buzzer-Rennen
     const isDd = state.players.length > 0 && J.dd.isDd(set, state, r, cat, row);
-    const race = !isDd && J.pixelLevel(set.rounds[r].categories[cat].clues[row], { revealed: false }) != null && state.players.length > 0;
+    const race = !isDd && rule('pixelRace') && J.pixelLevel(set.rounds[r].categories[cat].clues[row], { revealed: false }) != null && state.players.length > 0;
     const clue = set.rounds[r].categories[cat].clues[row];
     const kind = J.CLUE_KINDS.includes(clue.kind) ? clue.kind : 'normal';
     mutate(`Frage ${J.pointsFor(r, row)} „${set.rounds[r].categories[cat].name}“ geöffnet`, () => {
@@ -530,7 +532,8 @@
   // ---------- Timer ----------
   let lastTickSec = null;
   function startTimer() {
-    const total = window.JEOP_TIMER_MS || J.TIMER_MS;
+    if (!rule('timer') || !state.current) return; // Host erzwingt die Option
+    const total = window.JEOP_TIMER_MS || Number(rule('timerSec')) * 1000;
     state.current.timer = { endsAt: Date.now() + total, total };
     lastTickSec = null;
     commit(); // bewusst ohne Undo-Eintrag
@@ -579,7 +582,7 @@
     const cat = set.rounds[cur.round].categories[cur.cat];
     const clue = cat.clues[cur.row];
     // Daily Double: Clip erst nach dem Einsatz, sonst hören TV/Host den Hinweis vor dem Wetten
-    JMedia.hostClue(cur.dd && cur.dd.phase !== 'play' ? null : clue, `${cur.round}:${cur.cat}:${cur.row}`);
+    JMedia.hostClue(!rule('media') || (cur.dd && cur.dd.phase !== 'play') ? null : clue, `${cur.round}:${cur.cat}:${cur.row}`);
     const value = J.pointsFor(cur.round, cur.row);
     const penalty = J.penaltyFor(cur.round, cur.row, rule('penalty'));
     const judged = cur.judged || (cur.judged = {});
@@ -647,8 +650,9 @@
     $('buzzBtn').textContent = buzz.open ? 'Buzzer schließen' : 'Buzzer öffnen';
     $('buzzBtn').disabled = solved || !stealAllowed(cur);
     $('buzzBtn').title = stealAllowed(cur) ? '' : 'Klauen ist in den Spielregeln ausgeschaltet';
-    $('timerBtn').textContent = cur.timer ? '⏱ Neu starten' : '⏱ 15 s Timer';
-    $('timerStop').hidden = !cur.timer;
+    $('timerBtn').hidden = !rule('timer');
+    $('timerBtn').textContent = cur.timer ? '⏱ Neu starten' : `⏱ ${rule('timerSec')} s Timer`;
+    $('timerStop').hidden = !cur.timer || !rule('timer');
     if (cur.timer) J.renderTimer($('timerBox'), Math.max(0, cur.timer.endsAt - Date.now()), cur.timer.total);
     else J.renderTimer($('timerBox'), null);
 
@@ -910,17 +914,22 @@
     const el = $('finish');
     el.classList.toggle('show', !!state.finished);
     if (state.finished) {
-      J.renderPodium($('podium'), state.players, set.title, state.stats, isTeam() ? state.personStats : null);
-      $('podium').hidden = !!state.statsShown;
-      $('statsBox').hidden = !state.statsShown;
+      const aw = rule('awards');
+      J.renderPodium($('podium'), state.players, set.title, aw ? state.stats : null, aw && isTeam() ? state.personStats : null);
+      const showStats = !!state.statsShown && rule('stats');
+      $('statsToggle').hidden = !rule('stats');
+      $('exportCsv').hidden = !rule('stats');
+      $('exportJson').hidden = !rule('stats');
+      $('podium').hidden = showStats;
+      $('statsBox').hidden = !showStats;
       $('statsToggle').textContent = state.statsShown ? '🏆 Siegerehrung' : '📊 Statistik';
-      if (state.statsShown) J.stats.renderStats($('statsBox'), statsSummary());
+      if (showStats) J.stats.renderStats($('statsBox'), statsSummary());
       if (!shownFinished) J.confetti(el);
     }
     shownFinished = !!state.finished;
   }
   const statsSummary = () => J.stats.summarize(state.players, state.stats, state.personStats, state.mode);
-  $('statsToggle').addEventListener('click', () => { state.statsShown = !state.statsShown; commit(); });
+  $('statsToggle').addEventListener('click', () => { if (!rule('stats')) return; state.statsShown = !state.statsShown; commit(); });
   function download(name, mime, text) {
     const url = URL.createObjectURL(new Blob([text], { type: mime }));
     const a = document.createElement('a');
@@ -933,8 +942,8 @@
   }
   const exportName = (ext) => `jeopardy-statistik-${new Date().toISOString().slice(0, 10)}.${ext}`;
   // CSV mit BOM, damit Excel Umlaute richtig liest
-  $('exportCsv').addEventListener('click', () => download(exportName('csv'), 'text/csv;charset=utf-8', '\ufeff' + J.stats.toCsv(statsSummary())));
-  $('exportJson').addEventListener('click', () => download(exportName('json'), 'application/json', J.stats.toJson(statsSummary(), set.title)));
+  $('exportCsv').addEventListener('click', () => rule('stats') && download(exportName('csv'), 'text/csv;charset=utf-8', '\ufeff' + J.stats.toCsv(statsSummary())));
+  $('exportJson').addEventListener('click', () => rule('stats') && download(exportName('json'), 'application/json', J.stats.toJson(statsSummary(), set.title)));
   $('finishBtn').addEventListener('click', () => {
     if (!state.players.length) { alert(isTeam() ? 'Es gibt noch keine Teams.' : 'Es gibt noch keine Spieler.'); return; }
     mutate('🏆 Siegerehrung', () => { state.finished = true; state.statsShown = false; state.current = null; });
@@ -961,7 +970,7 @@
   let introTimer = null;
   let dealTimer = null;
   function startIntro() {
-    if (state.current) return;
+    if (state.current || !rule('intro')) return;
     clearTimeout(introTimer);
     state.intro = { round: state.round, step: 0 };
     commit();
@@ -1148,6 +1157,7 @@
   // Spielstand-Sicherung (Relay): liefert dem Sync den aktuellen Stand
   let gameRoom = code; // beim Import einer Datei kann der Raumcode wechseln
   J.gameSync.attach(() => ({ room: gameRoom, state, set }));
+  J.gameSync.setEnabled(rule('backup'));
   J.gameSync.onStatus((s) => { if (s.kind === 'readonly' && peer && !peer.destroyed) peer.destroy(); });
   $('code').textContent = code;
   $('link').textContent = joinUrl;
@@ -1258,6 +1268,7 @@
 
   // Live-Reaktionen: prüfen, drosseln (max. ~3 pro Sekunde und Gerät) und an alle verteilen
   function handleReaction(conn, msg) {
+    if (!rule('reactions')) return;
     if (!J.REACTIONS.includes(msg.emoji)) return;
     const now = Date.now();
     conn.reactTimes = (conn.reactTimes || []).filter((t) => now - t < 1000);

@@ -8,6 +8,7 @@
 
   box.innerHTML = `
     <summary>💾 Spiel sichern &amp; fortsetzen <span class="turn-state" id="gameState"></span></summary>
+    <p class="hint opt-locked" id="gameOffNote" hidden>🚫 Server-Sicherung ist für dieses Spiel ausgeschaltet (Spielregel „Spielstand auf dem Server sichern“). Es wird nichts gesichert; der Datei-Export funktioniert weiter.</p>
     <p class="hint">Der Spielstand wird nach jedem Zug auf dem Server gesichert. Nach einem Absturz oder auf einem anderen Gerät
       kannst du hier weiterspielen – Spieler verbinden sich über denselben Link von selbst wieder.</p>
     <form id="gamePwForm" hidden>
@@ -54,14 +55,16 @@
 
   function renderStatus(s) {
     const el = $('saveStatus');
-    const label = { ok: 'Gesichert ✓', offline: 'Sicherung offline', readonly: 'Nur Ansicht' }[s.kind];
+    const off = sync.enabled === false && s.kind !== 'off' && s.kind !== 'readonly';
+    $('gameOffNote').hidden = !off;
+    const label = off ? 'Sicherung aus' : { ok: 'Gesichert ✓', offline: 'Sicherung offline', readonly: 'Nur Ansicht' }[s.kind];
     el.hidden = !label;
     el.textContent = label || '';
-    el.className = 'status-inline ' + (s.kind === 'ok' ? 'ok' : 'bad');
+    el.className = 'status-inline ' + (off ? '' : s.kind === 'ok' ? 'ok' : 'bad');
     el.title = s.savedAt ? 'Zuletzt gesichert: ' + new Date(s.savedAt).toLocaleTimeString('de-DE') : '';
     box.hidden = s.kind === 'off';
-    $('gameState').textContent = { ok: '✓ aktiv', offline: 'offline', needpw: 'gesperrt', readonly: 'Nur Ansicht' }[s.kind] || '';
-    $('gameState').className = 'turn-state ' + (s.kind === 'ok' ? 'on' : '');
+    $('gameState').textContent = off ? 'aus' : { ok: '✓ aktiv', offline: 'offline', needpw: 'gesperrt', readonly: 'Nur Ansicht' }[s.kind] || '';
+    $('gameState').className = 'turn-state ' + (s.kind === 'ok' && !off ? 'on' : '');
     $('gamePwForm').hidden = s.kind !== 'needpw';
     $('gamePwMsg').textContent = s.wrong ? 'Falsches Passwort.' : 'Ohne Passwort wird nur in diesem Browser gespeichert.';
     $('gameList').hidden = s.kind === 'needpw';

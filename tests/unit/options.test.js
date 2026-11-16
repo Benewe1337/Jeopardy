@@ -21,6 +21,8 @@ test('Standard: ohne Optionen verhält sich alles wie bisher', () => {
   assert.deepEqual(plain(eff), {
     final: true, dd: true, ddRandom: false, jokerDouble: true, jokerHint: true, jokerPass: true,
     steal: true, stealHalf: true, penalty: 'half', turn: true,
+    pixelRace: true, timer: true, timerSec: '15', intro: true, reactions: true, qrTv: true, media: true,
+    stats: true, awards: true, soundDefault: true, backup: true,
   });
   assert.equal(J.penaltyFor(0, 2), 150);
   assert.equal(J.stealFor(0, 2), 150);
@@ -152,4 +154,63 @@ test('whoIsUp ohne Zug: niemand vor der ersten Antwort', () => {
   const cur = { round: 0, cat: 0, row: 0, judged: {}, buzz: { open: false, winner: null } };
   assert.equal(J.whoIsUp(cur, null), null);
   assert.equal(J.whoIsUp({ ...cur, buzz: { open: false, winner: 'b' } }, null), 'b');
+});
+
+// ---------- Teil B: Reaktionen, Intro, Auszeichnungen, Rennen, Timer, QR, Statistik, Clips, Sicherung, Sound ----------
+test('Teil B: Standardwerte, Timer-Dauer nur als Auswahl, Timer aus macht Dauer wirkungslos', () => {
+  const { set, st } = game();
+  assert.equal(J.opt(set, st, 'timerSec'), '15');
+  st.options = { timerSec: '30' };
+  assert.equal(J.opt(set, st, 'timerSec'), '30');
+  st.options = { timerSec: '25' };
+  assert.equal(J.opt(set, st, 'timerSec'), '15', 'ungültige Dauer wird verworfen');
+  assert.deepEqual(plain(J.cleanOptions({ timerSec: '25', timer: false })), { timer: false });
+  st.options = { timer: false, timerSec: '30' };
+  assert.equal(J.opt(set, st, 'timerSec'), '15', 'ohne Timer gilt der Standard');
+});
+
+test('publicState: Reaktionen, QR, Auszeichnungen, Sound-Standard gehen an Spieler/TV', () => {
+  const { set, st } = game();
+  const o = J.publicState(set, st).opts;
+  assert.deepEqual([o.reactions, o.qrTv, o.awards, o.soundDefault], [true, true, true, true]);
+  st.options = { reactions: false, qrTv: false, awards: false, soundDefault: false };
+  const o2 = J.publicState(set, st).opts;
+  assert.deepEqual([o2.reactions, o2.qrTv, o2.awards, o2.soundDefault], [false, false, false, false]);
+  // Host-only-Optionen bleiben geheim
+  assert.ok(!('backup' in o2) && !('intro' in o2) && !('timer' in o2) && !('pixelRace' in o2));
+});
+
+test('publicState: Statistik und Auszeichnungen steuern, was an die Spieler geht', () => {
+  const { set, st } = game();
+  st.finished = true; st.statsShown = true;
+  st.stats = { a: { right: 2, buzzWins: 1 } };
+  assert.equal(J.publicState(set, st).statsShown, true);
+  assert.deepEqual(plain(J.publicState(set, st).stats), st.stats);
+  st.options = { stats: false };
+  assert.equal(J.publicState(set, st).statsShown, false, 'Statistik aus: nie anzeigen');
+  assert.deepEqual(plain(J.publicState(set, st).stats), st.stats, 'Auszeichnungen brauchen die Daten noch');
+  st.options = { stats: false, awards: false };
+  assert.deepEqual(plain(J.publicState(set, st).stats), {}, 'beides aus: keine Daten an Spieler');
+  st.options = { awards: false };
+  assert.equal(J.publicState(set, st).statsShown, true);
+});
+
+test('publicState: Clips aus → kein Hinweis für Handys', () => {
+  const { set, st } = game();
+  set.rounds[0].categories[0].clues[0].media = 'https://example.com/a.mp3';
+  st.current = { round: 0, cat: 0, row: 0, revealed: false, judged: {}, buzz: { open: false }, kind: 'normal' };
+  assert.deepEqual(plain(J.publicState(set, st).current.media), { kind: 'audio' });
+  st.options = { media: false };
+  assert.equal(J.publicState(set, st).current.media, null);
+});
+
+test('Teil B: Optionen überleben normalizeState/Resume und Set-Normalisierung', () => {
+  const o = { reactions: false, intro: false, awards: false, pixelRace: false, timer: false, timerSec: '20', qrTv: false, stats: false, media: false, backup: false, soundDefault: false };
+  assert.deepEqual(plain(J.normalizeState({ options: o }, { resume: true }).options), o);
+  assert.deepEqual(plain(J.normalizeSet({ options: o }).options), o);
+});
+
+test('awards() liefert weiter Daten (Aus passiert beim Rendern, nicht in der Statistik)', () => {
+  const players = [{ id: 'a', name: 'A', score: 0 }];
+  assert.ok(J.awards(players, { a: { right: 3 } }).length > 0);
 });
