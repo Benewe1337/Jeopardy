@@ -22,7 +22,7 @@
       "q": "Welches Gas ist hauptverantwortlich für den menschengemachten Treibhauseffekt?",
       "a": "Kohlenstoffdioxid",
       "img": "",
-      "note": "CO2. Quelle: https://de.wikipedia.org/wiki/Kohlenstoffdioxid"
+      "note": "CO2; ca. 60 % der Verstärkung des Treibhauseffekts. Falle: Wasserdampf ist insgesamt stärkstes Treibhausgas, aber nicht menschengemacht. Quelle: https://de.wikipedia.org/wiki/Kohlenstoffdioxid"
     },
     {
       "q": "Wie heißt das größte Korallenriff der Erde vor der Küste Australiens?",
@@ -34,7 +34,7 @@
       "q": "Welche ist die größte Insel der Welt?",
       "a": "Grönland | Neuguinea | Borneo | Madagaskar",
       "img": "",
-      "note": "Multiple Choice. Australien zählt als Kontinent. Quelle: https://de.wikipedia.org/wiki/Grönland",
+      "note": "Multiple Choice. Australien zählt als Kontinent, nicht als Insel. Quelle: https://de.wikipedia.org/wiki/Gr%C3%B6nland",
       "kind": "choice"
     }
   ]

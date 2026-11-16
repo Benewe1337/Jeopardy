@@ -13,7 +13,7 @@
       "note": "Quelle: https://de.wikipedia.org/wiki/Sonic_the_Hedgehog"
     },
     {
-      "q": "Wie heißt die Prinzessin in 'The Legend of Zelda'?",
+      "q": "Wie heißt die Prinzessin von Hyrule, die Link immer wieder retten muss?",
       "a": "Zelda",
       "img": "",
       "note": "Falle: Der Held heißt Link. Quelle: https://de.wikipedia.org/wiki/The_Legend_of_Zelda"
@@ -22,19 +22,19 @@
       "q": "Aus welchem Land stammte Tetris-Erfinder Alexei Paschitnow?",
       "a": "Sowjetunion",
       "img": "",
-      "note": "Auch 'Russland' ok. Quelle: https://de.wikipedia.org/wiki/Tetris"
+      "note": "Auch \"Russland\" ok (Moskau, damals UdSSR). Quelle: https://de.wikipedia.org/wiki/Tetris"
     },
     {
       "q": "Wie heißt der Bösewicht in 'The Legend of Zelda' (Schweinsgestalt)?",
       "a": "Ganon",
       "img": "",
-      "note": "Auch Ganondorf. Quelle: https://de.wikipedia.org/wiki/Ganon"
+      "note": "Auch Ganondorf. Quelle: https://en.wikipedia.org/wiki/Ganon"
     },
     {
-      "q": "Welche Firma veröffentlichte 1980 den Spielhallenklassiker Pac-Man?",
+      "q": "Welche japanische Firma veröffentlichte 1980 den Spielhallenklassiker Pac-Man?",
       "a": "Namco",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Pac-Man"
+      "note": "In den USA vertrieb Midway. Quelle: https://de.wikipedia.org/wiki/Pac-Man"
     }
   ]
 }

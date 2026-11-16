@@ -10,7 +10,7 @@
       "q": "Welches Märchen handelt von einem Mädchen mit roter Kopfbedeckung und einem Wolf?",
       "a": "Rotkäppchen",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Rotkäppchen"
+      "note": "Quelle: https://de.wikipedia.org/wiki/Rotk%C3%A4ppchen"
     },
     {
       "q": "Wie viele Zwerge leben im Märchen bei Schneewittchen?",
@@ -31,10 +31,10 @@
       "note": "Sinngemäß reicht. Quelle: https://de.wikipedia.org/wiki/Des_Kaisers_neue_Kleider"
     },
     {
-      "q": "Wie lauten die Vornamen der Märchensammler Brüder Grimm?",
-      "a": "Jacob und Wilhelm",
+      "q": "Welcher deutsche Dichter schrieb die Märchen 'Das kalte Herz' und 'Zwerg Nase'?",
+      "a": "Wilhelm Hauff",
       "img": "",
-      "note": "Beide nötig. Quelle: https://de.wikipedia.org/wiki/Brüder_Grimm"
+      "note": "Hauff reicht. Quelle: https://de.wikipedia.org/wiki/Wilhelm_Hauff"
     }
   ]
 }

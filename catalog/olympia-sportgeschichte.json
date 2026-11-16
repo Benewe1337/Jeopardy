@@ -16,25 +16,25 @@
       "q": "Welcher Sprinter hält den 100-m-Weltrekord von 9,58 Sekunden?",
       "a": "Usain Bolt",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Usain_Bolt"
+      "note": "Aufgestellt 2009 in Berlin. Auch 'Bolt'. Quelle: https://en.wikipedia.org/wiki/Usain_Bolt"
     },
     {
       "q": "In welcher Stadt fanden die Olympischen Sommerspiele 2016 statt?",
       "a": "Rio de Janeiro",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Olympische_Sommerspiele_2016"
+      "note": "Quelle: https://en.wikipedia.org/wiki/2016_Summer_Olympics"
+    },
+    {
+      "q": "Wer erzielte im Finale 1954 das Siegtor beim 'Wunder von Bern'?",
+      "a": "Helmut Rahn",
+      "img": "",
+      "note": "3:2 gegen Ungarn, 84. Minute. Quelle: https://de.wikipedia.org/wiki/Helmut_Rahn"
     },
     {
       "q": "Wer begründete die modernen Olympischen Spiele?",
       "a": "Pierre de Coubertin",
       "img": "",
       "note": "Quelle: https://de.wikipedia.org/wiki/Pierre_de_Coubertin"
-    },
-    {
-      "q": "Wer erzielte im Finale 1954 das Siegtor beim 'Wunder von Bern'?",
-      "a": "Helmut Rahn",
-      "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Helmut_Rahn"
     }
   ]
 }

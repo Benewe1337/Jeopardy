@@ -10,31 +10,31 @@
       "q": "Welche Band bestand aus John, Paul, George und Ringo?",
       "a": "The Beatles",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/The_Beatles"
+      "note": "John Lennon, Paul McCartney, George Harrison, Ringo Starr. Quelle: https://de.wikipedia.org/wiki/The_Beatles"
     },
     {
       "q": "Wer wird 'King of Pop' genannt?",
       "a": "Michael Jackson",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Michael_Jackson"
+      "note": "Spitzname seit 1989. Quelle: https://de.wikipedia.org/wiki/Michael_Jackson"
     },
     {
       "q": "Wie heißt die südkoreanische Band mit RM, Jin, Suga, J-Hope, Jimin, V und Jungkook?",
       "a": "BTS",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/BTS_(Band)"
-    },
-    {
-      "q": "Welcher Rapper heißt mit bürgerlichem Namen Marshall Mathers?",
-      "a": "Eminem",
-      "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Eminem"
+      "note": "Schreibweise auch 'Jung Kook'. Auch 'Bangtan Boys'. Quelle: https://de.wikipedia.org/wiki/BTS_(Band)"
     },
     {
       "q": "Welches Album von Michael Jackson von 1982 gilt als meistverkauftes aller Zeiten?",
       "a": "Thriller",
       "img": "",
-      "note": "Kein Songtext; Verkaufszahlen laut Schätzungen. Quelle: https://de.wikipedia.org/wiki/Thriller_(Album)"
+      "note": "Erschienen 29.11.1982; Schätzungen 65 bis 110 Mio. Verkäufe. Kein Songtext. Quelle: https://de.wikipedia.org/wiki/Thriller_(Album)"
+    },
+    {
+      "q": "Welcher Rapper heißt mit bürgerlichem Namen Marshall Mathers?",
+      "a": "Eminem",
+      "img": "",
+      "note": "Marshall Bruce Mathers III. Quelle: https://de.wikipedia.org/wiki/Eminem"
     }
   ]
 }

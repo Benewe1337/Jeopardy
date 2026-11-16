@@ -16,13 +16,7 @@
       "q": "Welcher Space Ranger ist Woodys bester Freund in 'Toy Story'?",
       "a": "Buzz Lightyear",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Toy_Story"
-    },
-    {
-      "q": "Wie heißt der blaue Fisch mit dem schlechten Gedächtnis in 'Findet Nemo'?",
-      "a": "Dorie",
-      "img": "",
-      "note": "Im Original 'Dory'. Quelle: https://de.wikipedia.org/wiki/Findet_Nemo"
+      "note": "Buzz sieht sich selbst als Space Ranger (eigentlich Spielzeug). Quelle: https://de.wikipedia.org/wiki/Toy_Story"
     },
     {
       "q": "Wie heißt der böse Löwe in 'Der König der Löwen'?",
@@ -31,10 +25,16 @@
       "note": "Quelle: https://de.wikipedia.org/wiki/Der_König_der_Löwen_(1994)"
     },
     {
+      "q": "Wie heißt der blaue Fisch mit dem schlechten Gedächtnis in 'Findet Nemo'?",
+      "a": "Dorie",
+      "img": "",
+      "note": "Palettendoktorfisch; im Original \"Dory\". Quelle: https://de.wikipedia.org/wiki/Findet_Nemo"
+    },
+    {
       "q": "Welcher südkoreanische Film gewann 2020 als erster fremdsprachiger Film den Oscar als bester Film?",
       "a": "Parasite",
       "img": "",
-      "note": "'Gisaengchung' auch ok. Quelle: https://de.wikipedia.org/wiki/Parasite_(Film)"
+      "note": "Oscar-Verleihung Feb. 2020; \"Gisaengchung\" auch ok. Quelle: https://de.wikipedia.org/wiki/Parasite_(Film)"
     }
   ]
 }

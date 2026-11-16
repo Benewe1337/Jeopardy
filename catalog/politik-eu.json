@@ -10,32 +10,32 @@
       "q": "Wie heißt die gemeinsame Währung der meisten EU-Länder?",
       "a": "Euro",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Euro"
+      "note": "Aktuell 21 von 27 EU-Staaten (mit Bulgarien seit 2026). Quelle: https://de.wikipedia.org/wiki/Euro"
     },
     {
       "q": "Wie viele Mitgliedstaaten hat die EU seit 2020?",
       "a": "27",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Europäische_Union"
+      "note": "Seit dem Brexit (Januar 2020). Quelle: https://de.wikipedia.org/wiki/Europ%C3%A4ische_Union"
     },
     {
       "q": "In welcher Stadt hat das Europäische Parlament seinen offiziellen Sitz?",
       "a": "Straßburg | Brüssel | Luxemburg | Paris",
       "img": "",
-      "note": "Multiple Choice. Falle: Brüssel (dort tagen Ausschüsse). Quelle: https://de.wikipedia.org/wiki/Europäisches_Parlament",
+      "note": "Multiple Choice. Falle: Brüssel (dort tagen Ausschüsse und Zusatzsitzungen). Quelle: https://de.wikipedia.org/wiki/Europ%C3%A4isches_Parlament",
       "kind": "choice"
     },
     {
       "q": "In welchem Jahr trat das Grundgesetz in Kraft?",
       "a": "1949",
       "img": "",
-      "note": "23. Mai 1949. Quelle: https://de.wikipedia.org/wiki/Grundgesetz_für_die_Bundesrepublik_Deutschland"
+      "note": "In Kraft seit 24. Mai 1949 (verkündet 23. Mai). Quelle: https://de.wikipedia.org/wiki/Grundgesetz_f%C3%BCr_die_Bundesrepublik_Deutschland"
     },
     {
       "q": "Wie heißt der Vertrag von 1992, der die Europäische Union begründete?",
       "a": "Vertrag von Maastricht",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Vertrag_von_Maastricht"
+      "note": "Unterzeichnet 7.2.1992, in Kraft 1.11.1993. Auch 'Maastricht'. Quelle: https://de.wikipedia.org/wiki/Vertrag_von_Maastricht"
     }
   ]
 }

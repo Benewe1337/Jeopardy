@@ -15,13 +15,13 @@
       "q": "Wie heißt die Gestalt mit Schlangenhaaren, deren Blick versteinert?",
       "a": "Medusa",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Medusa"
+      "note": "Nur Medusa war sterblich; ihre Schwestern Stheno und Euryale sind ebenfalls Gorgonen. Quelle: https://de.wikipedia.org/wiki/Medusa"
     },
     {
       "q": "Wie heißt der dreiköpfige Hund, der den Eingang der Unterwelt bewacht?",
       "a": "Kerberos",
       "img": "",
-      "note": "Auch 'Cerberus'. Quelle: https://de.wikipedia.org/wiki/Kerberos"
+      "note": "Auch 'Cerberus'. Meist dreiköpfig dargestellt. Quelle: https://de.wikipedia.org/wiki/Kerberos"
     },
     {
       "q": "Wie heißt Odins achtbeiniges Pferd?",
@@ -33,7 +33,7 @@
       "q": "Wie heißt die Weltenschlange der nordischen Mythologie?",
       "a": "Midgardschlange",
       "img": "",
-      "note": "Auch 'Jörmungandr'. Quelle: https://de.wikipedia.org/wiki/Midgardschlange"
+      "note": "Auch 'Jörmungandr' / 'Weltenschlange'. Quelle: https://de.wikipedia.org/wiki/Midgardschlange"
     }
   ]
 }
