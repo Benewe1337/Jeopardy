@@ -571,7 +571,8 @@
     if (!cur) { JMedia.hostClue(null, null); return; }
     const cat = set.rounds[cur.round].categories[cur.cat];
     const clue = cat.clues[cur.row];
-    JMedia.hostClue(clue, `${cur.round}:${cur.cat}:${cur.row}`);
+    // Daily Double: Clip erst nach dem Einsatz, sonst hören TV/Host den Hinweis vor dem Wetten
+    JMedia.hostClue(cur.dd && cur.dd.phase !== 'play' ? null : clue, `${cur.round}:${cur.cat}:${cur.row}`);
     const value = J.pointsFor(cur.round, cur.row);
     const penalty = J.penaltyFor(cur.round, cur.row);
     const judged = cur.judged || (cur.judged = {});

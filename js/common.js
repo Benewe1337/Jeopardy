@@ -466,6 +466,7 @@
     return {
       round: 0, used: emptyUsed(), players: [], current: null, turn: null, finished: false,
       stats: {}, personStats: {}, statsShown: false, mode: 'single', teamSize: 3, history: [],
+      fj: null, ddAuto: [], ddRandom: null,
     };
   }
 

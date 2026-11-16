@@ -365,3 +365,44 @@ test('Wiederhergestellter State verrät Spielern keine Schätzantwort', () => {
   assert.ok(!pub.includes('GEHEIM-42'));
   assert.ok(!/"answer":\s*42/.test(pub));
 });
+
+// ---------- Integration: Final Jeopardy / Daily Double / Statistik / Medien überleben Laden und Fortsetzen ----------
+test('normalizeState behält FJ-, DD-, Statistik-Felder (Laden und Fortsetzen)', () => {
+  const raw = {
+    players: [{ id: 'a', name: 'A', score: 100 }],
+    current: { round: 0, cat: 1, row: 2, dd: { phase: 'wager', pid: 'a', wager: null } },
+    fj: { phase: 'wager', wagers: { a: 50 } },
+    ddAuto: [{ round: 0, cat: 1, row: 2 }],
+    ddRandom: true,
+    stats: { a: { right: 1 } },
+    personStats: { p1: { right: 1 } },
+    statsShown: true,
+    history: [{ label: 'h' }],
+  };
+  for (const opts of [undefined, { resume: true }]) {
+    const s = plain(J.normalizeState(raw, opts));
+    assert.deepEqual(s.fj, raw.fj);
+    assert.deepEqual(s.ddAuto, raw.ddAuto);
+    assert.equal(s.ddRandom, true);
+    assert.equal(s.current.dd.phase, 'wager');
+    assert.deepEqual(s.stats, raw.stats);
+    assert.deepEqual(s.personStats, raw.personStats);
+    assert.equal(s.statsShown, true);
+    assert.equal(s.history.length, 1);
+  }
+  const d = plain(J.normalizeState({}));
+  assert.equal(d.fj, null);
+  assert.deepEqual(d.ddAuto, []);
+  assert.equal(d.statsShown, false);
+});
+
+test('normalizeSet behält Daily-Double-Felder, Medien und Final-Jeopardy-Daten (Spielstand-Datei)', () => {
+  const set = J.defaultSet();
+  set.rounds[0].categories[0].clues[1] = { q: 'q', a: 'a', note: '', img: '', dd: true, media: 'https://example.com/x.mp3', mediaType: 'audio' };
+  set.ddRandom = true;
+  const n = plain(J.normalizeSet(JSON.parse(JSON.stringify(set))));
+  assert.equal(n.rounds[0].categories[0].clues[1].dd, true);
+  assert.equal(n.rounds[0].categories[0].clues[1].media, 'https://example.com/x.mp3');
+  assert.equal(n.rounds[0].categories[0].clues[1].mediaType, 'audio');
+  assert.equal(n.ddRandom, true);
+});
