@@ -39,6 +39,11 @@
       <span class="timer-num"></span>
     </div>
     <img class="clue-img" id="img" alt="" hidden>
+    <div class="tv-media" id="tvMediaBox" hidden>
+      <video id="tvMedia" playsinline preload="auto"></video>
+      <div class="tv-media-icon">🔊</div>
+    </div>
+    <div class="media-hint" id="mediaHint" hidden>🔊 Clip läuft am TV</div>
     <div class="clue-text" id="q"></div>
     <div class="clue-answer" id="a"></div>
     <div class="hint-box" id="hintBox" hidden></div>
@@ -49,6 +54,28 @@
       <div class="joker-bar" id="jokerBar" hidden></div>
     </div>
     <div class="scores" id="overlayScores"></div>
+  </div>
+
+  <div class="final-overlay" id="finalBox">
+    <div class="fj-kicker">⭐ Final Jeopardy</div>
+    <div class="fj-category" id="fjCategory"></div>
+    <div class="timer big" id="fjTimerBox" hidden>
+      <div class="timer-track"><div class="timer-fill"></div></div>
+      <span class="timer-num"></span>
+    </div>
+    <div class="fj-question" id="fjQ" hidden></div>
+    <div class="fj-body" id="fjBody"></div>
+    <div class="fj-status" id="fjStatus" hidden></div>
+    <div class="scores" id="fjScores"></div>
+  </div>
+
+  <div class="final-overlay dd-overlay" id="ddBox">
+    <div class="fj-kicker" id="ddKicker">Daily Double</div>
+    <div class="dd-title" id="ddTitle">Daily Double!</div>
+    <div class="dd-sub" id="ddSub"></div>
+    <div class="fj-body" id="ddBody"></div>
+    <div class="fj-status" id="ddStatus" hidden></div>
+    <div class="scores" id="ddScores"></div>
   </div>
 
   <div class="react-bar" id="reactBar" hidden></div>
@@ -64,7 +91,8 @@
   </div>
 
   <div class="finish" id="finish">
-    <div class="finish-inner"><div id="podium"></div></div>
+    <div class="finish-inner"><div id="podium"></div>
+      <div id="statsBox" hidden></div></div>
   </div>
 
   <div class="picker" id="picker" hidden>
@@ -87,7 +115,12 @@
   <script src="vendor/qrcode.js"></script>
   <script src="js/qr.js"></script>
   <script src="js/common.js"></script>
+  <script src="js/media.js"></script>
   <script src="js/net.js"></script>
+  <script src="js/finale.js"></script>
+  <script src="js/dd.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/finale-player.js"></script>
   <script src="js/player.js"></script>
 </body>
 </html>

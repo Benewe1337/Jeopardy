@@ -1,5 +1,6 @@
 (function () {
   const $ = (id) => document.getElementById(id);
+  JMedia.tvInit($);
   const room = (new URLSearchParams(location.search).get('room') || '').trim().toUpperCase();
 
   if (!room) {
@@ -80,8 +81,10 @@
       ov.__enter = setTimeout(() => ov.classList.remove('entering'), 400);
     }
     if (!cur) ov.classList.remove('fx-right', 'fx-wrong');
+    renderDd(s);
     if (cur) {
-      $('meta').textContent = `${cur.category} – ${cur.value}`;
+      $('meta').textContent = (cur.dd ? '⭐ Daily Double · ' : '') + `${cur.category} – ${cur.dd && cur.dd.wager != null ? 'Einsatz ' + cur.value : cur.value}`;
+      $('mediaHint').hidden = !cur.media || me === 'tv';
       $('q').textContent = cur.q;
       const img = $('img');
       const imgSrc = J.safeImg(cur.img);
@@ -104,6 +107,9 @@
     $('finish').classList.toggle('show', !!s.finished);
     if (s.finished) {
       J.renderPodium($('podium'), s.players, s.title, s.stats, s.mode === 'team' ? s.personStats : null);
+      $('podium').hidden = !!s.statsShown;
+      $('statsBox').hidden = !s.statsShown;
+      if (s.statsShown) J.stats.renderStats($('statsBox'), J.stats.summarize(s.players, s.stats, s.personStats, s.mode));
       if (!wasFinished) J.confetti($('finish'));
     }
     wasFinished = !!s.finished;
@@ -114,6 +120,71 @@
     renderJokers(clueKey);
     renderSpecial(clueKey);
     syncTimer(cur && cur.timer);
+    if (J.fjPlayer) J.fjPlayer.render(s);
+  }
+
+  // ---------- Daily Double ----------
+  // Overlay für Animation und Einsatz; sobald der Einsatz steht, übernimmt die normale Frageansicht.
+  let ddBuilt = null;   // für welchen Zustand das Einsatzformular gebaut ist
+  let ddWagerSent = null;
+  let ddSeen = null;    // Frage, für die der Auftritt schon lief
+  function renderDd(s) {
+    const cur = s.current;
+    const dd = cur && cur.dd;
+    const box = $('ddBox');
+    const show = !!dd && dd.phase !== 'play';
+    box.classList.toggle('show', show);
+    if (!show) { ddBuilt = null; ddWagerSent = null; if (!dd) ddSeen = null; return; }
+    const key = `${s.round}:${cur.cat}:${cur.row}`;
+    if (ddSeen !== key) {
+      ddSeen = key;
+      const t = $('ddTitle');
+      t.style.animation = 'none';
+      void t.offsetWidth;
+      t.style.animation = '';
+      box.classList.add('entering');
+      clearTimeout(box.__enter);
+      box.__enter = setTimeout(() => box.classList.remove('entering'), 400);
+    }
+    const p = s.players.find((x) => x.id === dd.pid);
+    const mineTurn = !!p && p.id === me;
+    $('ddKicker').textContent = `${cur.category} – ${cur.value}`;
+    $('ddSub').textContent = dd.phase === 'reveal' ? (p ? `${p.name} ist am Zug` : '') : p ? `${p.name} setzt …` : 'Der Host wählt, wer spielt';
+    J.renderScores($('ddScores'), s.players, dd.pid);
+    const body = $('ddBody');
+    const bk = dd.phase + ':' + (mineTurn ? 'me' : 'view') + ':' + dd.max;
+    if (bk !== ddBuilt) {
+      ddBuilt = bk;
+      body.innerHTML = '';
+      if (dd.phase === 'wager' && mineTurn) body.appendChild(ddWagerForm(dd));
+    }
+    const st = $('ddStatus');
+    st.hidden = !(dd.phase === 'wager' && p);
+    if (!st.hidden) {
+      st.textContent = mineTurn
+        ? `${isTeamMode() ? 'Euer' : 'Dein'} Einsatz: ${dd.min}–${dd.max}${ddWagerSent != null ? ` · ${ddWagerSent} gesendet ✓` : ''}`
+        : `${p.name} wählt den Einsatz`;
+    }
+  }
+
+  function ddWagerForm(dd) {
+    const team = isTeamMode();
+    const f = document.createElement('form');
+    f.className = 'fj-form';
+    f.noValidate = true;
+    f.innerHTML = `<label>${team ? 'Euer' : 'Dein'} Einsatz (${dd.min}–${dd.max})
+      <input id="ddWagerInput" type="number" inputmode="numeric" min="${dd.min}" max="${dd.max}" step="1" autocomplete="off" placeholder="${dd.min}–${dd.max}"></label>
+      <button class="primary" type="submit" id="ddWagerBtn">Einsatz setzen</button>`;
+    f.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const input = f.querySelector('input');
+      const v = J.fj.parseWager(input.value);
+      if (v == null || v < dd.min || v > dd.max || !conn || !conn.open) { input.classList.add('invalid'); return; }
+      input.classList.remove('invalid');
+      ddWagerSent = v;
+      conn.send({ type: 'ddwager', value: v });
+    });
+    return f;
   }
 
   // ---------- Wer bin ich? ----------
@@ -181,7 +252,8 @@
     const kind = cur && cur.kind;
     if (!cur || !J.isSpecialKind(kind)) { box.hidden = true; specialKey = null; return; }
     box.hidden = false;
-    const isPlayer = !!myPlayer();
+    // Daily Double: nur wer spielt, darf abgeben
+    const isPlayer = !!myPlayer() && (!cur.dd || cur.dd.pid === me);
     const data = kind === 'estimate' ? cur.est : kind === 'choice' ? cur.mc : cur.ord;
     const total = last.players.length;
     const nameOf = (id) => (last.players.find((p) => p.id === id) || {}).name || '?';
@@ -361,7 +433,7 @@
     bar.hidden = false;
     // Nur neu zeichnen, wenn sich an der Leiste etwas ändert – sonst springen die Knöpfe bei jedem
     // Update vom Host weg, gerade übers Relay, und ein Tipp geht ins Leere
-    const sig = JSON.stringify([clueKey, double, jokerArmed, passOpen, mePlayer.usedJokers,
+    const sig = JSON.stringify([clueKey, double, !!cur.dd, cur.dd && cur.dd.phase, jokerArmed, passOpen, mePlayer.usedJokers,
       J.JOKERS.map((j) => J.jokerBlock(j.id, ctx)), last.players.map((p) => [p.id, p.name])]);
     if (bar.__sig === sig && bar.childElementCount) return;
     bar.__sig = sig;
@@ -394,6 +466,12 @@
       row.appendChild(btn);
     });
     bar.appendChild(row);
+    if (cur.dd) {
+      const note = document.createElement('div');
+      note.className = 'joker-reason';
+      note.textContent = 'Daily Double: „Doppelt oder nichts“ und „Weitergeben“ sind gesperrt – nur der Tipp geht.';
+      bar.appendChild(note);
+    }
     // Weitergeben: an wen?
     if (passOpen && !J.jokerBlock('pass', ctx)) {
       const pick = document.createElement('div');
@@ -593,7 +671,7 @@
 
   function sendHello() {
     const pid = me && me !== 'watch' && me !== 'tv' ? me : null;
-    if (conn && conn.open) conn.send({ type: 'hello', playerId: pid, deviceId, name: myName });
+    if (conn && conn.open) conn.send({ type: 'hello', playerId: pid, deviceId, name: myName, tv: me === 'tv' });
   }
 
   // ---------- Buzzer ----------
@@ -617,7 +695,7 @@
     // Wer bei dieser Frage noch antworten darf, sieht den Buzzer die ganze Zeit –
     // grau, solange er zu ist. Drücken auf den grauen Knopf sperrt kurz (gegen Dauer-Hämmern).
     const special = J.isSpecialKind(cur.kind);
-    const eligible = isPlayer && !judged[me] && !solved && !special;
+    const eligible = isPlayer && !judged[me] && !solved && !special && !cur.dd; // Daily Double: kein Buzzer
     const canBuzz = eligible && buzz.open;
     // Reaktionszeit startet, sobald der Knopf hier scharf wird (Netzlaufzeit zählt nicht)
     if (canBuzz && shownId !== buzz.id) {
@@ -650,6 +728,9 @@
       } else {
         text = `⚡ ${wName} ist dran` + (t(buzz.winner) ? ` (${t(buzz.winner)})` : '');
       }
+    } else if (cur.dd && cur.dd.phase === 'play') {
+      const dp = last.players.find((p) => p.id === cur.dd.pid);
+      text = cur.dd.pid === me ? `⭐ Daily Double – du antwortest für ${cur.value}` : `⭐ Daily Double: ${dp ? dp.name : '?'} antwortet allein`;
     } else if (cur.jokers && cur.jokers.pass && !Object.keys(judged).length && !solved) {
       const pn = (id) => (last.players.find((p) => p.id === id) || {}).name || '?';
       text = cur.jokers.pass.to === me
@@ -785,6 +866,7 @@
       if (!msg) return;
       if (msg.type === 'state') render(msg.data);
       else if (msg.type === 'sfx' && J.soundOn()) J.sfx(msg.name);
+      else if (msg.type === 'media' && me === 'tv') JMedia.tvMessage(msg);
       else if (msg.type === 'teamAnswer' && msg.key === lastJokerKey) {
         // Teammitglied hat abgegeben → hier übernehmen, damit alle sehen, was fürs Team zählt
         teamBy = msg.by;
@@ -798,6 +880,7 @@
         hints[msg.key] = msg.text;
         renderJokers(lastJokerKey);
       }
+      else if (msg.type === 'fjMine' && J.fjPlayer) J.fjPlayer.onMine(msg);
       else if (msg.type === 'react') J.showReaction(msg.emoji, msg.name);
       else if (msg.type === 'taken' && msg.playerId === me) {
         forget(msg.reason === 'full' ? 'Dieses Team ist schon voll. Wähle ein anderes.' : 'Dieser Name ist schon auf einem anderen Gerät vergeben.');
@@ -860,6 +943,9 @@
     if (!J.audioUnlocked()) { J.unlockAudio(); setTimeout(renderSound, 50); }
   });
   renderSound();
+
+  // Schnittstelle für Final Jeopardy (js/finale-player.js)
+  J.playerApi = { me: () => me, myPlayer, conn: () => conn, last: () => last, isTeam: isTeamMode, myName: () => myName };
 
   window.addEventListener('beforeunload', () => { if (peer) peer.destroy(); });
   J.net.ready.then(startPeer);

@@ -32,6 +32,15 @@
         <div class="meta" id="clueMeta"></div>
         <div class="q" id="clueQ"></div>
         <img class="clue-img host-img" id="clueImg" alt="" hidden>
+        <div class="media-box" id="mediaBox" hidden>
+          <video class="host-media" id="hostMedia" playsinline preload="auto" hidden></video>
+          <div class="media-ctrl">
+            <button class="small" id="mediaPlay">▶ Abspielen</button>
+            <button class="small" id="mediaRestart">↺ Von vorn</button>
+            <button class="small ghost" id="mediaMute">🔊 Hier an</button>
+            <span class="media-note">läuft auch am TV</span>
+          </div>
+        </div>
         <div class="hint" id="pixelHint" hidden></div>
         <div class="a" id="clueA"></div>
         <div class="note" id="clueNote" hidden></div>
@@ -41,6 +50,7 @@
         </div>
         <div class="buzz-status" id="buzzStatus" hidden></div>
         <div class="joker-status" id="jokerStatus" hidden></div>
+        <div class="special dd-panel" id="ddPanel" hidden></div>
         <div class="judge" id="judge"></div>
         <div class="special" id="special" hidden></div>
         <div class="clue-actions">
@@ -56,6 +66,8 @@
           <button id="cancel">Abbrechen (Feld bleibt frei)</button>
         </div>
       </section>
+
+      <section class="host-clue fj-host" id="fjPanel"></section>
 
       <div class="turn-banner" id="turnBanner" hidden></div>
       <div class="board" id="board"></div>
@@ -88,6 +100,7 @@
         <div class="themes" id="themes"></div>
         <h3>Spiel</h3>
         <div class="btn-row">
+          <button class="small" id="fjBtn">⭐ Final Jeopardy</button>
           <button class="small primary" id="finishBtn">🏆 Siegerehrung</button>
           <button class="small" id="soundToggle">🔊 Sounds an</button>
           <a class="btn small" href="editor.html" target="_blank">Fragen bearbeiten</a>
@@ -101,6 +114,10 @@
           <input type="file" id="importFile" accept=".json,application/json" hidden>
         </div>
         <p class="hint" id="fileMsg" role="status">Die Spielstand-Datei enthält die Antworten – nicht an Spieler weitergeben.</p>
+        <label class="dd-random" title="Beim Rundenstart werden die Felder gelost (nie in der ersten Reihe). Ersetzt im Set markierte Felder.">
+          <input type="checkbox" id="ddRandom"> 🎲 Zufällige Daily Doubles (1 in Runde 1, 2 in Runde 2)
+        </label>
+        <p class="hint" id="fjHint" hidden></p>
         <p class="hint">Änderungen im Editor-Tab werden sofort übernommen.</p>
         <details class="turn-box" id="gameBox" hidden></details>
         <details class="turn-box" id="turnBox">
@@ -134,7 +151,13 @@
   <div class="finish" id="finish">
     <div class="finish-inner">
       <div id="podium"></div>
-      <button class="primary" id="finishBack">Zurück zum Spiel</button>
+      <div id="statsBox" hidden></div>
+      <div class="finish-actions">
+        <button id="statsToggle">📊 Statistik</button>
+        <button id="exportCsv">⬇ CSV</button>
+        <button id="exportJson">⬇ JSON</button>
+        <button class="primary" id="finishBack">Zurück zum Spiel</button>
+      </div>
     </div>
   </div>
 
@@ -142,9 +165,14 @@
   <script src="vendor/qrcode.js"></script>
   <script src="js/qr.js"></script>
   <script src="js/common.js"></script>
+  <script src="js/media.js"></script>
   <script src="js/net.js"></script>
   <script src="js/gamesync.js"></script>
   <script src="js/gameui.js"></script>
+  <script src="js/finale.js"></script>
+  <script src="js/dd.js"></script>
+  <script src="js/stats.js"></script>
+  <script src="js/finale-host.js"></script>
   <script src="js/host.js"></script>
 </body>
 </html>

@@ -310,12 +310,32 @@
           persist();
         });
         hintFor();
-        box.append(q, a, note, kind, imageControls(clue));
+        // Daily Double: Spieler sehen vorher nichts davon; der Host sieht die Markierung im Pult
+        const dd = document.createElement('label');
+        dd.className = 'ed-dd';
+        dd.title = 'Wer am Zug ist, setzt Punkte und beantwortet die Frage allein (kein Buzzer, kein Klauen).';
+        const ddBox = document.createElement('input');
+        ddBox.type = 'checkbox';
+        ddBox.checked = !!clue.dd;
+        ddBox.addEventListener('change', () => {
+          if (ddBox.checked) clue.dd = true; else delete clue.dd;
+          box.classList.toggle('is-dd', ddBox.checked);
+          persist();
+        });
+        dd.append(ddBox, ' ⭐ Daily Double');
+        box.classList.toggle('is-dd', !!clue.dd);
+        box.append(q, a, note, kind, dd, imageControls(clue), JMedia.editorControls(clue, persist));
         col.appendChild(box);
       });
       grid.appendChild(col);
     });
+    $('ddRandomBox').checked = !!set.ddRandom;
+    if (J.fjEditor) J.fjEditor.render(set, persist);
   }
+  $('ddRandomBox').addEventListener('change', () => {
+    if ($('ddRandomBox').checked) set.ddRandom = true; else delete set.ddRandom;
+    persist();
+  });
 
   titleEl.addEventListener('input', () => { set.title = titleEl.value; persist(); });
 
