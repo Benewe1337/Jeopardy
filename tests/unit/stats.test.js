@@ -149,3 +149,23 @@ test('loadState: statsShown wird normalisiert; publicState zeigt Statistik nur n
   assert.equal(K.publicState(K.defaultSet(), st).statsShown, false);
   assert.equal(K.publicState(K.defaultSet(), { ...st, finished: true }).statsShown, true);
 });
+
+test('recordDd: zählt gewonnen/verloren samt Einsatz; Undo über Snapshot-Kopie', () => {
+  const stats = {};
+  S.recordDd(stats, 'a', 'right', 300);
+  const snap = plain(stats); // wie der Undo-Snapshot des Hosts
+  S.recordDd(stats, 'a', 'wrong', 500);
+  eq(stats.a.dd, { won: 1, lost: 1, wonPoints: 300, lostPoints: 500 });
+  const restored = plain(snap); // Undo = Snapshot zurückspielen
+  eq(restored.a.dd, { won: 1, lost: 0, wonPoints: 300, lostPoints: 0 });
+  S.recordDd(restored, 'a', 'wrong', 500); // erneut werten zählt genau einmal
+  eq(restored.a.dd, { won: 1, lost: 1, wonPoints: 300, lostPoints: 500 });
+  const sum = S.summarize([{ id: 'a', name: 'Anna', score: 0 }, { id: 'b', name: 'Ben', score: 0 }], stats, {}, 'single');
+  eq(sum.players[0].dd, { won: 1, lost: 1, wonPoints: 300, lostPoints: 500 });
+  assert.equal(sum.players[1].dd, null);
+  const csv = S.toCsv(sum);
+  assert.ok(csv.includes('Spieler,Anna,,,Daily Double gewonnen,1'));
+  assert.ok(csv.includes('Spieler,Anna,,,Daily Double Punkte verloren,500'));
+  assert.ok(!csv.includes('Spieler,Ben,,,Daily Double'));
+  assert.equal(JSON.parse(S.toJson(sum)).players[0].dd.lostPoints, 500);
+});
