@@ -1,0 +1,45 @@
+{
+  "name": "Schätzen & Sortieren",
+  "level": "runde2",
+  "tags": [
+    "schätzfragen",
+    "mix"
+  ],
+  "clues": [
+    {
+      "q": "Wie hoch ist das Hochhaus Burj Khalifa in Metern?",
+      "a": "828",
+      "img": "",
+      "note": "Schätzfrage. Quelle: https://de.wikipedia.org/wiki/Burj_Khalifa",
+      "kind": "estimate"
+    },
+    {
+      "q": "Sortiere die Planeten nach Abstand zur Sonne (nah → fern): Merkur, Erde, Mars, Jupiter",
+      "a": "Merkur | Erde | Mars | Jupiter",
+      "img": "",
+      "note": "Reihenfolge-Frage. Quelle: https://de.wikipedia.org/wiki/Sonnensystem",
+      "kind": "order"
+    },
+    {
+      "q": "Wie viele Millionen Einwohner hat Deutschland ungefähr?",
+      "a": "84",
+      "img": "",
+      "note": "Schätzfrage; Stand 2023 etwa 84,7 Mio. Quelle: https://de.wikipedia.org/wiki/Deutschland",
+      "kind": "estimate"
+    },
+    {
+      "q": "Sortiere nach Erscheinungsjahr (älteste zuerst): Super Mario Bros., Minecraft, Fortnite, The Legend of Zelda",
+      "a": "Super Mario Bros. | The Legend of Zelda | Minecraft | Fortnite",
+      "img": "",
+      "note": "1985, 1986, 2011, 2017. Quelle: https://de.wikipedia.org/wiki/Super_Mario_Bros.",
+      "kind": "order"
+    },
+    {
+      "q": "Wie hoch ist der Mount Everest in Metern (amtlich seit 2020)?",
+      "a": "8849",
+      "img": "",
+      "note": "Schätzfrage; 8848,86 m. Quelle: https://de.wikipedia.org/wiki/Mount_Everest",
+      "kind": "estimate"
+    }
+  ]
+}

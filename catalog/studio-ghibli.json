@@ -1,0 +1,40 @@
+{
+  "name": "Studio Ghibli",
+  "level": "runde2",
+  "tags": [
+    "anime",
+    "film"
+  ],
+  "clues": [
+    {
+      "q": "In welchem Ghibli-Film betritt ein Mädchen eine Geisterwelt und arbeitet in einem Badehaus?",
+      "a": "Chihiros Reise ins Zauberland",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Chihiros_Reise_ins_Zauberland"
+    },
+    {
+      "q": "Wie heißt der große, graue Waldgeist aus 'Mein Nachbar …'?",
+      "a": "Totoro",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Mein_Nachbar_Totoro"
+    },
+    {
+      "q": "Welcher Regisseur gründete Studio Ghibli mit?",
+      "a": "Hayao Miyazaki",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Hayao_Miyazaki"
+    },
+    {
+      "q": "Welcher Ghibli-Film gewann 2024 den Oscar als bester Animationsfilm?",
+      "a": "Der Junge und der Reiher",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Der_Junge_und_der_Reiher"
+    },
+    {
+      "q": "Wer führte bei 'Die letzten Glühwürmchen' Regie?",
+      "a": "Isao Takahata",
+      "img": "",
+      "note": "Falle: Miyazaki. Quelle: https://de.wikipedia.org/wiki/Die_letzten_Glühwürmchen"
+    }
+  ]
+}

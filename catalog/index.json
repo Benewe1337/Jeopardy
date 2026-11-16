@@ -1,0 +1,395 @@
+[
+  {
+    "file": "tiere.json",
+    "name": "Tiere",
+    "level": "runde1",
+    "tags": [
+      "natur",
+      "tiere"
+    ],
+    "types": []
+  },
+  {
+    "file": "essen-trinken.json",
+    "name": "Essen & Trinken",
+    "level": "runde1",
+    "tags": [
+      "essen",
+      "alltag"
+    ],
+    "types": [
+      "choice"
+    ]
+  },
+  {
+    "file": "europa.json",
+    "name": "Europa",
+    "level": "runde1",
+    "tags": [
+      "geografie",
+      "europa"
+    ],
+    "types": [
+      "choice"
+    ]
+  },
+  {
+    "file": "maerchen.json",
+    "name": "Märchen",
+    "level": "runde1",
+    "tags": [
+      "märchen",
+      "klassiker"
+    ],
+    "types": []
+  },
+  {
+    "file": "film-zeichentrick.json",
+    "name": "Film & Zeichentrick",
+    "level": "runde1",
+    "tags": [
+      "film",
+      "disney"
+    ],
+    "types": []
+  },
+  {
+    "file": "superhelden.json",
+    "name": "Superhelden",
+    "level": "runde1",
+    "tags": [
+      "comic",
+      "marvel",
+      "dc"
+    ],
+    "types": []
+  },
+  {
+    "file": "pokémon.json",
+    "name": "Pokémon",
+    "level": "runde1",
+    "tags": [
+      "gaming",
+      "pokemon"
+    ],
+    "types": []
+  },
+  {
+    "file": "minecraft.json",
+    "name": "Minecraft",
+    "level": "runde1",
+    "tags": [
+      "gaming",
+      "minecraft"
+    ],
+    "types": []
+  },
+  {
+    "file": "anime.json",
+    "name": "Anime",
+    "level": "runde1",
+    "tags": [
+      "anime",
+      "popkultur"
+    ],
+    "types": []
+  },
+  {
+    "file": "sport.json",
+    "name": "Sport",
+    "level": "runde1",
+    "tags": [
+      "sport"
+    ],
+    "types": []
+  },
+  {
+    "file": "pop-musik.json",
+    "name": "Pop-Musik",
+    "level": "runde1",
+    "tags": [
+      "musik",
+      "pop"
+    ],
+    "types": []
+  },
+  {
+    "file": "weltall.json",
+    "name": "Weltall",
+    "level": "runde1",
+    "tags": [
+      "wissenschaft",
+      "weltall"
+    ],
+    "types": []
+  },
+  {
+    "file": "der-mensch.json",
+    "name": "Der Mensch",
+    "level": "runde1",
+    "tags": [
+      "wissenschaft",
+      "körper"
+    ],
+    "types": [
+      "estimate"
+    ]
+  },
+  {
+    "file": "deutschland.json",
+    "name": "Deutschland",
+    "level": "runde1",
+    "tags": [
+      "deutschland",
+      "geografie"
+    ],
+    "types": []
+  },
+  {
+    "file": "harry-potter.json",
+    "name": "Harry Potter",
+    "level": "runde1",
+    "tags": [
+      "film",
+      "buch",
+      "fantasy"
+    ],
+    "types": []
+  },
+  {
+    "file": "nintendo-mario.json",
+    "name": "Nintendo & Mario",
+    "level": "runde1",
+    "tags": [
+      "gaming",
+      "nintendo"
+    ],
+    "types": []
+  },
+  {
+    "file": "erfinder-tech.json",
+    "name": "Erfinder & Tech",
+    "level": "runde1",
+    "tags": [
+      "technik",
+      "wissenschaft"
+    ],
+    "types": []
+  },
+  {
+    "file": "internet-social-media.json",
+    "name": "Internet & Social Media",
+    "level": "runde1",
+    "tags": [
+      "internet",
+      "popkultur"
+    ],
+    "types": []
+  },
+  {
+    "file": "feste-braeuche.json",
+    "name": "Feste & Bräuche",
+    "level": "runde1",
+    "tags": [
+      "bräuche",
+      "alltag"
+    ],
+    "types": []
+  },
+  {
+    "file": "geschichte.json",
+    "name": "Geschichte",
+    "level": "runde2",
+    "tags": [
+      "geschichte"
+    ],
+    "types": []
+  },
+  {
+    "file": "mythologie.json",
+    "name": "Mythologie",
+    "level": "runde2",
+    "tags": [
+      "mythologie"
+    ],
+    "types": []
+  },
+  {
+    "file": "chemie.json",
+    "name": "Chemie",
+    "level": "runde2",
+    "tags": [
+      "wissenschaft",
+      "chemie"
+    ],
+    "types": []
+  },
+  {
+    "file": "mathe-zahlen.json",
+    "name": "Mathe & Zahlen",
+    "level": "runde2",
+    "tags": [
+      "mathe",
+      "wissenschaft"
+    ],
+    "types": []
+  },
+  {
+    "file": "literatur.json",
+    "name": "Literatur",
+    "level": "runde2",
+    "tags": [
+      "literatur"
+    ],
+    "types": []
+  },
+  {
+    "file": "weltweite-hauptstaedte.json",
+    "name": "Weltweite Hauptstädte",
+    "level": "runde2",
+    "tags": [
+      "geografie",
+      "welt"
+    ],
+    "types": []
+  },
+  {
+    "file": "videospiel-klassiker.json",
+    "name": "Videospiel-Klassiker",
+    "level": "runde2",
+    "tags": [
+      "gaming",
+      "retro"
+    ],
+    "types": []
+  },
+  {
+    "file": "studio-ghibli.json",
+    "name": "Studio Ghibli",
+    "level": "runde2",
+    "tags": [
+      "anime",
+      "film"
+    ],
+    "types": []
+  },
+  {
+    "file": "herr-der-ringe.json",
+    "name": "Herr der Ringe",
+    "level": "runde2",
+    "tags": [
+      "fantasy",
+      "film",
+      "buch"
+    ],
+    "types": []
+  },
+  {
+    "file": "serien.json",
+    "name": "Serien",
+    "level": "runde2",
+    "tags": [
+      "serien",
+      "popkultur"
+    ],
+    "types": []
+  },
+  {
+    "file": "physik.json",
+    "name": "Physik",
+    "level": "runde2",
+    "tags": [
+      "wissenschaft",
+      "physik"
+    ],
+    "types": [
+      "estimate"
+    ]
+  },
+  {
+    "file": "kunst-malerei.json",
+    "name": "Kunst & Malerei",
+    "level": "runde2",
+    "tags": [
+      "kunst"
+    ],
+    "types": []
+  },
+  {
+    "file": "klassische-musik.json",
+    "name": "Klassische Musik",
+    "level": "runde2",
+    "tags": [
+      "musik",
+      "klassik"
+    ],
+    "types": []
+  },
+  {
+    "file": "schaetzen-sortieren.json",
+    "name": "Schätzen & Sortieren",
+    "level": "runde2",
+    "tags": [
+      "schätzfragen",
+      "mix"
+    ],
+    "types": [
+      "estimate",
+      "order"
+    ]
+  },
+  {
+    "file": "informatik.json",
+    "name": "Informatik",
+    "level": "runde2",
+    "tags": [
+      "informatik",
+      "technik"
+    ],
+    "types": []
+  },
+  {
+    "file": "politik-eu.json",
+    "name": "Politik & EU",
+    "level": "runde2",
+    "tags": [
+      "politik",
+      "europa"
+    ],
+    "types": [
+      "choice"
+    ]
+  },
+  {
+    "file": "natur-umwelt.json",
+    "name": "Natur & Umwelt",
+    "level": "runde2",
+    "tags": [
+      "natur",
+      "geografie"
+    ],
+    "types": [
+      "choice"
+    ]
+  },
+  {
+    "file": "olympia-sportgeschichte.json",
+    "name": "Olympia & Sportgeschichte",
+    "level": "runde2",
+    "tags": [
+      "sport",
+      "geschichte"
+    ],
+    "types": []
+  },
+  {
+    "file": "star-wars.json",
+    "name": "Star Wars",
+    "level": "runde2",
+    "tags": [
+      "film",
+      "scifi"
+    ],
+    "types": []
+  }
+]

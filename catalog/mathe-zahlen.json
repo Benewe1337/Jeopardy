@@ -1,0 +1,40 @@
+{
+  "name": "Mathe & Zahlen",
+  "level": "runde2",
+  "tags": [
+    "mathe",
+    "wissenschaft"
+  ],
+  "clues": [
+    {
+      "q": "Wie viel ist 7 mal 8?",
+      "a": "56",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Einmaleins"
+    },
+    {
+      "q": "Wie nennt man eine Zahl, die nur durch 1 und sich selbst teilbar ist?",
+      "a": "Primzahl",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Primzahl"
+    },
+    {
+      "q": "Wie viel Grad beträgt die Winkelsumme im Dreieck?",
+      "a": "180",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Dreieck"
+    },
+    {
+      "q": "Wie heißt im rechtwinkligen Dreieck die längste Seite?",
+      "a": "Hypotenuse",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Rechtwinkliges_Dreieck"
+    },
+    {
+      "q": "Wie lautet die Quadratwurzel aus 1764?",
+      "a": "42",
+      "img": "",
+      "note": "42 mal 42 = 1764. Quelle: https://de.wikipedia.org/wiki/Quadratwurzel"
+    }
+  ]
+}

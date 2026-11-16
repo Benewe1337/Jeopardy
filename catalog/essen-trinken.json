@@ -1,0 +1,41 @@
+{
+  "name": "Essen & Trinken",
+  "level": "runde1",
+  "tags": [
+    "essen",
+    "alltag"
+  ],
+  "clues": [
+    {
+      "q": "In welcher süditalienischen Stadt wurde die Pizza erfunden?",
+      "a": "Neapel",
+      "img": "",
+      "note": "Pizza Margherita: Neapel 1889 (Legende). Quelle: https://de.wikipedia.org/wiki/Pizza"
+    },
+    {
+      "q": "Aus welchem Land kommt Sushi?",
+      "a": "Japan",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Sushi"
+    },
+    {
+      "q": "Aus welcher Pflanze wird Tofu hergestellt?",
+      "a": "Sojabohne",
+      "img": "",
+      "note": "Soja reicht. Quelle: https://de.wikipedia.org/wiki/Tofu"
+    },
+    {
+      "q": "Welches Gewürz aus Krokus-Blütenfäden gilt als das teuerste der Welt?",
+      "a": "Safran",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Safran"
+    },
+    {
+      "q": "Aus welcher Pflanze wird Tequila gebrannt?",
+      "a": "Blaue Agave | Zuckerrohr | Mais | Kaktus",
+      "img": "",
+      "note": "Multiple Choice. Falle: Kaktus (Agaven sind keine Kakteen). Quelle: https://de.wikipedia.org/wiki/Tequila",
+      "kind": "choice"
+    }
+  ]
+}

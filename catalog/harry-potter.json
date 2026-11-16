@@ -1,0 +1,41 @@
+{
+  "name": "Harry Potter",
+  "level": "runde1",
+  "tags": [
+    "film",
+    "buch",
+    "fantasy"
+  ],
+  "clues": [
+    {
+      "q": "In welches Haus von Hogwarts kommt Harry?",
+      "a": "Gryffindor",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Harry_Potter"
+    },
+    {
+      "q": "Wie heißt Harrys Eule?",
+      "a": "Hedwig",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Harry_Potter"
+    },
+    {
+      "q": "Wie heißt der Schulleiter von Hogwarts in den ersten Büchern?",
+      "a": "Dumbledore",
+      "img": "",
+      "note": "Albus Dumbledore. Quelle: https://de.wikipedia.org/wiki/Albus_Dumbledore"
+    },
+    {
+      "q": "Wie lautet der Entwaffnungszauber?",
+      "a": "Expelliarmus",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Harry_Potter"
+    },
+    {
+      "q": "Aus welchem Holz besteht Harrys erster Zauberstab?",
+      "a": "Stechpalme",
+      "img": "",
+      "note": "Holly; Kern: Phönixfeder. Quelle: https://harrypotter.fandom.com/wiki/Harry_Potter%27s_wand"
+    }
+  ]
+}

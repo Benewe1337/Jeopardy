@@ -1,0 +1,40 @@
+{
+  "name": "Minecraft",
+  "level": "runde1",
+  "tags": [
+    "gaming",
+    "minecraft"
+  ],
+  "clues": [
+    {
+      "q": "Wie heißt der grüne Gegner, der sich an Spieler heranschleicht und explodiert?",
+      "a": "Creeper",
+      "img": "",
+      "note": "Quelle: https://minecraft.wiki/w/Creeper"
+    },
+    {
+      "q": "Aus welchem Material baut man das Netherportal?",
+      "a": "Obsidian",
+      "img": "",
+      "note": "Mindestens 10 Blöcke. Quelle: https://minecraft.wiki/w/Nether_Portal"
+    },
+    {
+      "q": "Welchen Boss besiegt man in der Dimension 'Das Ende'?",
+      "a": "Enderdrache",
+      "img": "",
+      "note": "Quelle: https://minecraft.wiki/w/Ender_Dragon"
+    },
+    {
+      "q": "Aus welchem seltenen Erz im Nether gewinnt man Netherit?",
+      "a": "Antike Trümmer",
+      "img": "",
+      "note": "Original 'Ancient Debris'. Quelle: https://minecraft.wiki/w/Ancient_Debris"
+    },
+    {
+      "q": "Welcher Spitzname gehört dem schwedischen Minecraft-Erfinder Markus Persson?",
+      "a": "Notch",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Markus_Persson"
+    }
+  ]
+}

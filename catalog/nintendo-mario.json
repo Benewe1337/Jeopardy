@@ -1,0 +1,40 @@
+{
+  "name": "Nintendo & Mario",
+  "level": "runde1",
+  "tags": [
+    "gaming",
+    "nintendo"
+  ],
+  "clues": [
+    {
+      "q": "Welcher Klempner trägt eine rote Mütze mit M?",
+      "a": "Mario",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Mario_(Spielfigur)"
+    },
+    {
+      "q": "Wie heißt Marios grün gekleideter Bruder?",
+      "a": "Luigi",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Luigi"
+    },
+    {
+      "q": "Wie heißt die Prinzessin, die Mario immer wieder retten muss?",
+      "a": "Peach",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Prinzessin_Peach"
+    },
+    {
+      "q": "Wie heißt Marios grüner Dinosaurier-Freund?",
+      "a": "Yoshi",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Yoshi"
+    },
+    {
+      "q": "Welcher japanische Spieleentwickler hat Mario erfunden?",
+      "a": "Shigeru Miyamoto",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Shigeru_Miyamoto"
+    }
+  ]
+}

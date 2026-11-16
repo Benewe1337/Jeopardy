@@ -1,0 +1,40 @@
+{
+  "name": "Weltweite Hauptstädte",
+  "level": "runde2",
+  "tags": [
+    "geografie",
+    "welt"
+  ],
+  "clues": [
+    {
+      "q": "Wie heißt die Hauptstadt von Japan?",
+      "a": "Tokio",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Tokio"
+    },
+    {
+      "q": "Wie heißt die Hauptstadt von Australien?",
+      "a": "Canberra",
+      "img": "",
+      "note": "Falle: Sydney. Quelle: https://de.wikipedia.org/wiki/Canberra"
+    },
+    {
+      "q": "Wie heißt die Hauptstadt von Kanada?",
+      "a": "Ottawa",
+      "img": "",
+      "note": "Falle: Toronto. Quelle: https://de.wikipedia.org/wiki/Ottawa"
+    },
+    {
+      "q": "Wie heißt die Hauptstadt von Brasilien?",
+      "a": "Brasília",
+      "img": "",
+      "note": "Falle: Rio / São Paulo. Quelle: https://de.wikipedia.org/wiki/Brasília"
+    },
+    {
+      "q": "Wie heißt die Hauptstadt der Mongolei?",
+      "a": "Ulaanbaatar",
+      "img": "",
+      "note": "Auch 'Ulan-Bator'. Quelle: https://de.wikipedia.org/wiki/Ulaanbaatar"
+    }
+  ]
+}

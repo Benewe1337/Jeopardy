@@ -1,0 +1,39 @@
+{
+  "name": "Mythologie",
+  "level": "runde2",
+  "tags": [
+    "mythologie"
+  ],
+  "clues": [
+    {
+      "q": "Wie heißt der Göttervater der griechischen Mythologie?",
+      "a": "Zeus",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Zeus"
+    },
+    {
+      "q": "Wie heißt die Gestalt mit Schlangenhaaren, deren Blick versteinert?",
+      "a": "Medusa",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Medusa"
+    },
+    {
+      "q": "Wie heißt der dreiköpfige Hund, der den Eingang der Unterwelt bewacht?",
+      "a": "Kerberos",
+      "img": "",
+      "note": "Auch 'Cerberus'. Quelle: https://de.wikipedia.org/wiki/Kerberos"
+    },
+    {
+      "q": "Wie heißt Odins achtbeiniges Pferd?",
+      "a": "Sleipnir",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Sleipnir"
+    },
+    {
+      "q": "Wie heißt die Weltenschlange der nordischen Mythologie?",
+      "a": "Midgardschlange",
+      "img": "",
+      "note": "Auch 'Jörmungandr'. Quelle: https://de.wikipedia.org/wiki/Midgardschlange"
+    }
+  ]
+}

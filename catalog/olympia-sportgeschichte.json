@@ -1,0 +1,40 @@
+{
+  "name": "Olympia & Sportgeschichte",
+  "level": "runde2",
+  "tags": [
+    "sport",
+    "geschichte"
+  ],
+  "clues": [
+    {
+      "q": "Wie viele Ringe zeigt das olympische Symbol?",
+      "a": "Fünf",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Olympische_Ringe"
+    },
+    {
+      "q": "Welcher Sprinter hält den 100-m-Weltrekord von 9,58 Sekunden?",
+      "a": "Usain Bolt",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Usain_Bolt"
+    },
+    {
+      "q": "In welcher Stadt fanden die Olympischen Sommerspiele 2016 statt?",
+      "a": "Rio de Janeiro",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Olympische_Sommerspiele_2016"
+    },
+    {
+      "q": "Wer begründete die modernen Olympischen Spiele?",
+      "a": "Pierre de Coubertin",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Pierre_de_Coubertin"
+    },
+    {
+      "q": "Wer erzielte im Finale 1954 das Siegtor beim 'Wunder von Bern'?",
+      "a": "Helmut Rahn",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Helmut_Rahn"
+    }
+  ]
+}
