@@ -1536,3 +1536,13 @@ body.tv .buzz-area, body.tv .react-bar { display: none !important; }
   .clue-img.pixel, .clue-img.zoomed { height: 24vh; }
   .buzz-area { margin-top: 1.5vh; gap: 8px; }
 }
+
+/* Kategorien kopieren / mischen */
+.setmix { margin-bottom: 16px; padding: 12px 16px; }
+.setmix .setbar-row + .setbar-row, .setmix .mix-cats, .setmix .mix-picks { margin-top: 10px; }
+.mix-cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 14px; }
+.mix-cats label { display: flex; gap: 6px; align-items: center; font-weight: 600; }
+.mix-cats .mix-round { grid-column: 1 / -1; font-weight: 800; opacity: .7; }
+.mix-picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.mix-pick { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); }
+.mix-pick button { padding: 0 6px; }

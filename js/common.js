@@ -992,7 +992,65 @@
     el.appendChild(frag);
   }
 
+  // ---------- Fragenset-Bibliothek: Kategorien kopieren/mischen, Dateien prüfen ----------
+  const MAX_SET_FILE_BYTES = 4_000_000; // wie das Server-Limit für ein Set (api/sets)
+
+  const cloneJson = (x) => JSON.parse(JSON.stringify(x));
+
+  // Kategorie (mit allen Feldern: Fragearten, Bilder, Notizen) aus einem Set holen; null, wenn es sie nicht gibt
+  function pickCategory(set, round, cat) {
+    const c = set && set.rounds && set.rounds[round] && set.rounds[round].categories[cat];
+    return c ? cloneJson(c) : null;
+  }
+
+  /**
+   * Kopiert Kategorien in ein Set: `picks` = [{ set, round, cat }], eingefügt ab Platz `slot`
+   * der Runde `round` (bestehende Kategorien dort werden ersetzt). Gibt ein neues Set zurück.
+   */
+  function copyCategories(target, picks, round, slot) {
+    if (!Array.isArray(picks) || !picks.length) throw new Error('Keine Kategorie ausgewählt.');
+    if (!Number.isInteger(round) || round < 0 || round >= ROUNDS) throw new Error('Ungültige Runde.');
+    if (!Number.isInteger(slot) || slot < 0 || slot + picks.length > CATS) {
+      throw new Error(`Ab diesem Platz ist nur Platz für ${Math.max(0, CATS - slot)} Kategorien (${picks.length} ausgewählt).`);
+    }
+    const out = normalizeSet(cloneJson(target));
+    picks.forEach((p, i) => {
+      const c = pickCategory(normalizeSet(p.set), p.round, p.cat);
+      if (!c) throw new Error('Kategorie nicht gefunden.');
+      out.rounds[round].categories[slot + i] = c;
+    });
+    return normalizeSet(out);
+  }
+
+  /** Neues Set aus Kategorien verschiedener Sets: die ersten 6 füllen Runde 1, die nächsten 6 Runde 2. */
+  function mixSets(picks, title) {
+    if (!Array.isArray(picks) || !picks.length) throw new Error('Keine Kategorie ausgewählt.');
+    if (picks.length > CATS * ROUNDS) throw new Error(`Höchstens ${CATS * ROUNDS} Kategorien möglich.`);
+    const out = defaultSet();
+    out.title = typeof title === 'string' && title.trim() ? title.trim() : 'Mix';
+    picks.forEach((p, i) => {
+      const c = pickCategory(normalizeSet(p.set), p.round, p.cat);
+      if (!c) throw new Error('Kategorie nicht gefunden.');
+      out.rounds[Math.floor(i / CATS)].categories[i % CATS] = c;
+    });
+    return normalizeSet(out);
+  }
+
+  /** Set-Datei prüfen und normalisieren; wirft Error mit deutscher Meldung. `size` = Dateigröße in Bytes (optional). */
+  function parseSetFile(text, size = String(text).length) {
+    if (size > MAX_SET_FILE_BYTES) throw new Error('Datei ist zu groß (maximal 4 MB).');
+    let data;
+    try { data = JSON.parse(text); } catch (e) { throw new Error('Datei ist kein gültiges JSON.'); }
+    if (!data || !Array.isArray(data.rounds)) throw new Error('Kein gültiges Fragenset.');
+    // Unbekannte Fragearten (Datei ist neuer als diese Seite) nicht still verwerfen
+    const unknown = data.rounds.flatMap((r) => (r && r.categories) || []).flatMap((c) => (c && c.clues) || [])
+      .some((cl) => cl && cl.kind && !CLUE_KINDS.includes(cl.kind));
+    if (unknown) throw new Error('Das Set nutzt Fragearten, die diese Seite noch nicht kennt. Bitte die Seite neu laden (Strg+Shift+R) und nochmal importieren.');
+    return normalizeSet(data);
+  }
+
   window.J = {
+    copyCategories, mixSets, parseSetFile, pickCategory, MAX_SET_FILE_BYTES,
     PIXEL_STEPS, ZOOM_STEPS, imgSteps, imgMode, pixelLevel, pixelate, zoomCrop,
     CLUE_KINDS, isSpecialKind, parseNumber, estimateWinners, orderItems, shufflePerm, isPerm, orderCorrect, JOKERS, jokerInfo, jokerBlock, whoIsUp, hintPattern, judgePoints,
     APP_VERSION, CATS, ROWS, ROUNDS, SET_KEY,
