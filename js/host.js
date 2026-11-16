@@ -363,7 +363,7 @@
     mutate(`⭐ Daily Double: ${p.name} ${verdict === 'right' ? 'richtig' : 'falsch'} (${delta > 0 ? '+' : '−'}${dd.wager})`, () => {
       p.score += delta;
       cur.judged[p.id] = verdict;
-      stat(p.id)[verdict === 'right' ? 'right' : 'wrong']++;
+      recordVerdict(p.id, verdict, false);
       if (cur.kind === 'estimate') {
         cur.est.answer = J.parseNumber(clue.a);
         cur.est.winners = verdict === 'right' ? [p.id] : [];
