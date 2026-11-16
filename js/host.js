@@ -843,7 +843,7 @@
       const b = document.createElement('button');
       b.className = 'theme-btn' + (t.id === current ? ' on' : '');
       b.dataset.id = t.id;
-      b.innerHTML = `<span class="sw" style="background:linear-gradient(135deg, ${t.sw[0]} 55%, ${t.sw[1]} 55%)"></span>${t.name}`;
+      b.innerHTML = `<span class="sw" style="background:linear-gradient(135deg, ${t.sw[0]} 55%, ${t.sw[1]} 55%)"></span>${J.escapeHtml(t.name)}`;
       b.addEventListener('click', () => {
         J.setTheme(t.id);
         renderThemes();

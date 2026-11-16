@@ -778,6 +778,16 @@
     })[ch]);
   }
 
+  // Farbe für style-Attribute: nur #hex (aus der Teampalette); alles andere fällt weg
+  function safeColor(c) {
+    return typeof c === 'string' && /^#[0-9a-f]{3,8}$/i.test(c) ? c : '';
+  }
+  // Zahl für innerHTML: Netzwerkdaten können Strings sein → immer endliche Zahl
+  function safeNum(n) {
+    n = Number(n);
+    return Number.isFinite(n) ? n : 0;
+  }
+
   function renderScores(el, players, turnId) {
     if (!players.length) {
       el.innerHTML = '<div class="score-empty">Noch keine Spieler</div>';
@@ -787,9 +797,9 @@
     const prev = el.__prev || null;
     el.__prev = Object.fromEntries(players.map((p) => [p.id, p.score]));
     el.innerHTML = players.map((p) => `
-      <div class="score${p.id && p.id === turnId ? ' turn' : ''}"${p.color ? ` style="--team:${p.color}"` : ''}>
-        <div class="score-name">${p.color ? '<i class="team-dot"></i>' : ''}${escapeHtml(p.name)}</div>
-        <div class="score-value ${p.score < 0 ? 'neg' : ''}">${p.score}</div>
+      <div class="score${p.id && p.id === turnId ? ' turn' : ''}"${safeColor(p.color) ? ` style="--team:${safeColor(p.color)}"` : ''}>
+        <div class="score-name">${safeColor(p.color) ? '<i class="team-dot"></i>' : ''}${escapeHtml(p.name)}</div>
+        <div class="score-value ${p.score < 0 ? 'neg' : ''}">${safeNum(p.score)}</div>
         ${scoreDelta(prev, p)}
       </div>`).join('');
     // Geänderte Punkte: Kachel leuchtet grün/rot auf, Zahl rollt vom alten zum neuen Wert
@@ -816,7 +826,7 @@
   // „+500“ / „−250“ fliegt kurz über die Kachel, wenn sich die Punkte geändert haben
   function scoreDelta(prev, p) {
     if (!prev || !(p.id in prev)) return '';
-    const d = p.score - prev[p.id];
+    const d = safeNum(p.score) - prev[p.id];
     if (!d) return '';
     return `<span class="delta ${d > 0 ? 'pos' : 'neg'}">${d > 0 ? '+' : '−'}${Math.abs(d)}</span>`;
   }
@@ -917,7 +927,7 @@
       if (!ps.length) return '<div class="pod-col empty"></div>';
       return `<div class="pod-col p${place}">
         <div class="pod-names">${ps.map((p) => `<div class="pod-name">${escapeHtml(p.name)}</div>`).join('')}</div>
-        <div class="pod-score${ps[0].score < 0 ? ' neg' : ''}">${ps[0].score}</div>
+        <div class="pod-score${ps[0].score < 0 ? ' neg' : ''}">${safeNum(ps[0].score)}</div>
         <div class="pod-block"><span>${place}</span></div>
       </div>`;
     };
@@ -927,12 +937,12 @@
       <div class="pod-winner">${winners ? '🏆 ' + winners : 'Keine Spieler'}</div>
       <div class="podium">${col(2)}${col(1)}${col(3)}</div>
       ${rest.length ? `<div class="pod-rest">${rest.map((p) =>
-        `<div><span>${p.place}.</span> ${escapeHtml(p.name)} <b>${p.score}</b></div>`).join('')}</div>` : ''}
+        `<div><span>${safeNum(p.place)}.</span> ${escapeHtml(p.name)} <b>${safeNum(p.score)}</b></div>`).join('')}</div>` : ''}
       ${(() => {
         const list = awards(players, stats, persons);
         return list.length ? `<div class="awards">${list.map((a, i) => `
           <div class="award" style="--d:${1.2 + i * 0.25}s">
-            <div class="award-icon">${a.icon}</div>
+            <div class="award-icon">${escapeHtml(a.icon)}</div>
             <div class="award-title">${escapeHtml(a.title)}</div>
             <div class="award-name">${a.names.map(escapeHtml).join(' & ')}</div>
             <div class="award-value">${escapeHtml(a.value)}</div>
@@ -956,7 +966,7 @@
     el.className = 'react-float';
     el.style.left = (8 + Math.random() * 84) + '%';
     el.style.setProperty('--sway', (Math.random() * 80 - 40).toFixed(0) + 'px');
-    el.innerHTML = `<span class="react-emoji">${emoji}</span>${name ? `<span class="react-name">${escapeHtml(name)}</span>` : ''}`;
+    el.innerHTML = `<span class="react-emoji">${escapeHtml(emoji)}</span>${name ? `<span class="react-name">${escapeHtml(name)}</span>` : ''}`;
     el.addEventListener('animationend', () => el.remove());
     layer.appendChild(el);
   }
@@ -988,7 +998,7 @@
     APP_VERSION, CATS, ROWS, ROUNDS, SET_KEY,
     pointsFor, defaultSet, normalizeSet, defaultState,
     loadSet, saveSet, loadState, saveState,
-    roomCode, newRoomCode, peerId, publicState, escapeHtml, renderScores,
+    roomCode, newRoomCode, peerId, publicState, escapeHtml, safeColor, safeNum, renderScores,
     THEMES, getTheme, applyTheme, setTheme,
     penaltyFor, stealFor, sfx, startTimerMusic, stopTimerMusic, timerMusicOn, soundOn, setSoundOn, unlockAudio, audioUnlocked, renderTimer,
     TIMER_MS: 15000,

@@ -276,3 +276,38 @@ test('Punkte-Animation zeigt die Änderung mit Vorzeichen', () => {
   assert.match(J.scoreDelta({ a: 0 }, { id: 'a', score: -250 }), /class="delta neg">−250</);
   assert.equal(J.scoreDelta({}, { id: 'neu', score: 100 }), '');
 });
+
+test('escapeHtml maskiert alle HTML-Sonderzeichen', () => {
+  assert.equal(J.escapeHtml('<img src=x onerror=1>'), '&lt;img src=x onerror=1&gt;');
+  assert.equal(J.escapeHtml(`"a" & 'b'`), '&quot;a&quot; &amp; &#39;b&#39;');
+  assert.equal(J.escapeHtml(null), 'null');
+});
+
+test('safeColor lässt nur Hex-Farben durch', () => {
+  assert.equal(J.safeColor('#ef4444'), '#ef4444');
+  assert.equal(J.safeColor('red;background:url(x)'), '');
+  assert.equal(J.safeColor('#fff" onmouseover="x'), '');
+  assert.equal(J.safeColor(null), '');
+});
+
+test('safeNum liefert immer eine endliche Zahl', () => {
+  assert.equal(J.safeNum(250), 250);
+  assert.equal(J.safeNum('<b>'), 0);
+  assert.equal(J.safeNum(NaN), 0);
+  assert.equal(J.safeNum(undefined), 0);
+});
+
+test('safeImg erlaubt nur http(s) und Bild-Data-URLs', () => {
+  assert.equal(J.safeImg('https://x.de/a.png'), 'https://x.de/a.png');
+  assert.equal(J.safeImg('javascript:alert(1)'), '');
+  assert.equal(J.safeImg('data:text/html;base64,AAAA'), '');
+  assert.equal(J.safeImg('data:image/svg+xml;base64,AAAA'), '');
+  assert.equal(J.safeImg({}), '');
+});
+
+test('normalizeSet behält HTML in Texten als Text und verwirft unsichere Bild-URLs', () => {
+  const s = J.normalizeSet({ title: '<b>T</b>', rounds: [{ categories: [{ name: '<i>K</i>', clues: [{ q: '<img src=x onerror=1>', a: '<u>A</u>', img: 'javascript:1' }] }] }] });
+  assert.equal(s.title, '<b>T</b>');
+  assert.equal(s.rounds[0].categories[0].clues[0].q, '<img src=x onerror=1>');
+  assert.equal(s.rounds[0].categories[0].clues[0].img, '');
+});

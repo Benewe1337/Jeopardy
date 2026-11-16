@@ -183,7 +183,7 @@
       wrap.innerHTML = '';
       if (clue.img) {
         const thumb = document.createElement('img');
-        thumb.src = clue.img;
+        thumb.src = J.safeImg(clue.img);
         thumb.alt = '';
         const del = document.createElement('button');
         del.className = 'small ghost';
