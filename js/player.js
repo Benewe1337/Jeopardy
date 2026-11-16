@@ -43,6 +43,7 @@
   function render(s) {
     if (!checkVersion(s.v)) return;
     J.applyTheme(s.theme);
+    J.setSoundDefault(s.opts && s.opts.soundDefault);
     $('waiting').hidden = true;
     const board = $('board');
     board.hidden = false;
@@ -106,7 +107,7 @@
     // Siegerehrung
     $('finish').classList.toggle('show', !!s.finished);
     if (s.finished) {
-      J.renderPodium($('podium'), s.players, s.title, s.stats, s.mode === 'team' ? s.personStats : null);
+      J.renderPodium($('podium'), s.players, s.title, s.opts.awards ? s.stats : null, s.mode === 'team' && s.opts.awards ? s.personStats : null);
       $('podium').hidden = !!s.statsShown;
       $('statsBox').hidden = !s.statsShown;
       if (s.statsShown) J.stats.renderStats($('statsBox'), J.stats.summarize(s.players, s.stats, s.personStats, s.mode));
@@ -624,7 +625,7 @@
     }
     const btn = $('me');
     btn.hidden = !valid;
-    $('reactBar').hidden = !valid || me === 'tv';
+    $('reactBar').hidden = !valid || me === 'tv' || !(last && last.opts && last.opts.reactions !== false);
     btn.textContent = me === 'watch' ? '👀 Zuschauer'
       : me === 'tv' ? '📺 TV'
       : !myPlayer() ? ''
@@ -643,7 +644,7 @@
     return s.round > 0 || !!s.current || !!s.finished || s.used.some((col) => col.some(Boolean));
   }
   function renderInvite() {
-    const tv = me === 'tv' && last;
+    const tv = me === 'tv' && last && last.opts.qrTv !== false;
     if (last && (last.intro || gameStarted(last))) inviteDone = true; // nach Intro/erstem Feld nie wieder von allein
     const auto = tv && !inviteDone;
     const show = tv && (inviteManual === null ? auto : inviteManual);
@@ -884,7 +885,7 @@
         renderJokers(lastJokerKey);
       }
       else if (msg.type === 'fjMine' && J.fjPlayer) J.fjPlayer.onMine(msg);
-      else if (msg.type === 'react') J.showReaction(msg.emoji, msg.name);
+      else if (msg.type === 'react' && (!last || !last.opts || last.opts.reactions !== false)) J.showReaction(msg.emoji, msg.name);
       else if (msg.type === 'taken' && msg.playerId === me) {
         forget(msg.reason === 'full' ? 'Dieses Team ist schon voll. Wähle ein anderes.' : 'Dieser Name ist schon auf einem anderen Gerät vergeben.');
       } else if (msg.type === 'released') forget('Der Host hat dein Gerät getrennt. Bitte wähle neu.');

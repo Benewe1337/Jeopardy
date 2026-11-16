@@ -325,7 +325,8 @@
         });
         dd.append(ddBox, ' ⭐ Daily Double');
         box.classList.toggle('is-dd', !!clue.dd);
-        box.append(q, a, note, kind, dd, imageControls(clue), JMedia.editorControls(clue, persist));
+        box.append(q, a, note, kind, dd, imageControls(clue));
+        if (J.opt(set, null, 'media')) box.append(JMedia.editorControls(clue, persist));
         col.appendChild(box);
       });
       grid.appendChild(col);

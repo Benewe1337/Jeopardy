@@ -37,6 +37,7 @@
   // kind: off (kein Server) | needpw | ok | offline | readonly
   const listeners = [];
   const sync = {
+    enabled: true, // Spielregel „backup“: aus = nichts wird auf den Server geschrieben
     status: { kind: 'off', wrong: false, savedAt: null },
     get readonly() { return sync.status.kind === 'readonly'; },
     session: () => sessionId,
@@ -140,7 +141,7 @@
   }
 
   async function saveNow({ keepalive = false } = {}) {
-    if (!provider || sync.readonly || (sync.status.kind !== 'ok' && sync.status.kind !== 'offline')) return;
+    if (!provider || !sync.enabled || sync.readonly || (sync.status.kind !== 'ok' && sync.status.kind !== 'offline')) return;
     if (busy) { dirty = true; return; }
     busy = true;
     dirty = false;
@@ -176,11 +177,19 @@
 
   /** Nach jedem commit() des Hosts aufrufen. */
   sync.touch = () => {
-    if (!provider || sync.readonly) return;
+    if (!provider || sync.readonly || !sync.enabled) return;
     dirty = true;
     if (sync.status.kind === 'ok' || sync.status.kind === 'offline') schedule();
   };
   sync.attach = (fn) => { provider = fn; };
+  sync.setEnabled = (on) => {
+    on = on !== false;
+    if (sync.enabled === on) return;
+    sync.enabled = on;
+    if (!on) { clearTimeout(timer); clearTimeout(retryTimer); dirty = false; }
+    else sync.touch();
+    listeners.forEach((fn) => { try { fn(sync.status); } catch (e) { console.error(e); } });
+  };
   // Tab geht in den Hintergrund/zu: ausstehende Änderung sofort (ohne History) abschicken
   const flush = () => { if (dirty && !busy) saveNow({ keepalive: true }); };
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
@@ -194,7 +203,7 @@
    */
   async function init(room) {
     const kind = await connect();
-    if (kind !== 'ok') return {};
+    if (kind !== 'ok' || !sync.enabled) return {}; // Sicherung aus: nicht übernehmen, nichts schreiben
     let mine = null;
     try { mine = await get(room); } catch (e) { if (e.status !== 404) setStatus('offline'); }
     if (mine && mine.session !== sessionId) {
@@ -235,7 +244,7 @@
   }
 
   /** Eigenes Fenster als Schreiber behalten (lokalen Stand gegen den Server durchsetzen). */
-  sync.keepLocal = async (room) => { await claimHere(room); };
+  sync.keepLocal = async (room) => { if (sync.enabled) await claimHere(room); };
 
   /** Vom Relay gemeldet: ein anderes Fenster hat den Raum übernommen. */
   sync.markReadonly = () => setStatus('readonly');

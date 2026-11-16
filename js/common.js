@@ -53,6 +53,29 @@
       hint: 'Gilt nicht für Daily Double, Final Jeopardy und den Joker „Doppelt oder nichts“ (dort steht der Einsatz auf dem Spiel).' },
     { key: 'turn', group: 'Spielablauf', label: '🎯 „Am Zug“ / Reihenfolge', type: 'bool', default: true,
       hint: 'Aus: niemand ist am Zug, kein Banner. Joker „Weitergeben“ entfällt; „Doppelt oder nichts“ und „Tipp“ gehen dann nur noch für den Buzzer-Gewinner; beim Daily Double wählt der Host den Spieler.' },
+    { key: 'pixelRace', group: 'Spielablauf', label: '🖼️ Buzzer-Rennen bei Verpixeln/Zoom', type: 'bool', default: true,
+      hint: 'Aus: Bilder werden weiter per Host-Klick schärfer, aber der Buzzer öffnet nicht von allein für alle.' },
+    { key: 'timer', group: 'Spielablauf', label: '⏱ Frage-Timer', type: 'bool', default: true,
+      hint: 'Aus: keine Timer-Knöpfe, kein Timer-Sound. Der Final-Jeopardy-Timer (30 s) ist eine eigene feste Zeit und bleibt davon unberührt.' },
+    { key: 'timerSec', group: 'Spielablauf', label: '⏱ Dauer des Frage-Timers', type: 'choice', default: '15',
+      choices: [['10', '10 Sekunden'], ['15', '15 Sekunden'], ['20', '20 Sekunden'], ['30', '30 Sekunden']],
+      requires: { timer: true }, requiresHint: 'Braucht „Frage-Timer“.' },
+    { key: 'intro', group: 'Anzeige & Auswertung', label: '✨ Runden-Intro', type: 'bool', default: true,
+      hint: 'Aus: kein automatisches Intro beim Rundenwechsel, kein Intro-Knopf.' },
+    { key: 'reactions', group: 'Anzeige & Auswertung', label: '😂 Live-Reaktionen', type: 'bool', default: true,
+      hint: 'Aus: keine Emoji-Leiste auf den Handys; der Host verwirft Reaktionen.' },
+    { key: 'qrTv', group: 'Anzeige & Auswertung', label: '📺 QR-Code auf dem TV', type: 'bool', default: true,
+      hint: 'Aus: der TV zeigt keinen Beitritts-QR. Der QR im Host-Pult bleibt.' },
+    { key: 'media', group: 'Anzeige & Auswertung', label: '🎵 Audio-/Video-Clips', type: 'bool', default: true,
+      hint: 'Aus: Clips werden nicht geladen oder abgespielt, Handys bekommen keinen Hinweis; im Editor ausgeblendet (Clips bleiben im Set gespeichert).' },
+    { key: 'stats', group: 'Anzeige & Auswertung', label: '📊 Statistik am Spielende', type: 'bool', default: true,
+      hint: 'Aus: keine Statistik-Ansicht und keine CSV/JSON-Exporte (Erfassung läuft im Hintergrund weiter).' },
+    { key: 'awards', group: 'Anzeige & Auswertung', label: '🏅 Auszeichnungen bei der Siegerehrung', type: 'bool', default: true,
+      hint: 'Aus: Treppchen ohne Buzzer-König, Meisterdieb & Co.' },
+    { key: 'soundDefault', group: 'Anzeige & Auswertung', label: '🔊 Sounds bei Spielern standardmäßig an', type: 'bool', default: true,
+      hint: 'Gilt nur für Geräte, die noch nie umgeschaltet wurden; der Ton-Schalter am Gerät funktioniert weiter.' },
+    { key: 'backup', group: 'Sicherung', label: '💾 Spielstand auf dem Server sichern', type: 'bool', default: true,
+      hint: 'Nur mit Relay und Host-Passwort wirksam. Aus: nichts wird auf den Server geschrieben; Datei-Export bleibt.' },
   ];
   const OPTION_BY_KEY = Object.fromEntries(OPTION_DEFS.map((d) => [d.key, d]));
 
@@ -691,7 +714,7 @@
         dd: cur.dd ? window.J.dd.publicDd(cur, state) : null,
         q: ddHide ? '' : clue.q,
         // Clip nur als Hinweis: abgespielt wird er auf Host und TV, die Daten gehen nie an Handys
-        media: !ddHide && safeMedia(clue.media) ? { kind: mediaTypeOf(clue) } : null,
+        media: !ddHide && opt(set, state, 'media') && safeMedia(clue.media) ? { kind: mediaTypeOf(clue) } : null,
         // Verpixelte Bilder: echtes Bild erst nach der letzten Stufe; das Mini-Bild setzt der Host ein
         img: ddHide || pixelLevel(clue, cur) != null ? null : safeImg(clue.img) || null,
         pixel: ddHide || pixelLevel(clue, cur) == null ? null : { step: pixelLevel(clue, cur), steps: imgSteps(clue).length, mode: imgMode(clue) },
@@ -735,11 +758,12 @@
       teamSize: clampTeamSize(state.teamSize),
       turn: opt(set, state, 'turn') ? state.turn || null : null,
       // Spielregeln, die Spieler/TV kennen müssen (Joker-Leiste, „Am Zug“)
-      opts: Object.fromEntries(['jokerDouble', 'jokerHint', 'jokerPass', 'turn', 'penalty', 'stealHalf'].map((k) => [k, opt(set, state, k)])),
+      opts: Object.fromEntries(['jokerDouble', 'jokerHint', 'jokerPass', 'turn', 'penalty', 'stealHalf', 'reactions', 'qrTv', 'awards', 'soundDefault'].map((k) => [k, opt(set, state, k)])),
       finished: !!state.finished,
-      statsShown: !!state.statsShown && !!state.finished,
-      stats: state.stats || {},
-      personStats: state.mode === 'team' ? state.personStats || {} : {},
+      // Statistik-Daten gehen nur raus, wenn Statistik oder Auszeichnungen sie anzeigen dürfen
+      statsShown: !!state.statsShown && !!state.finished && opt(set, state, 'stats'),
+      stats: opt(set, state, 'stats') || opt(set, state, 'awards') ? state.stats || {} : {},
+      personStats: state.mode === 'team' && (opt(set, state, 'stats') || opt(set, state, 'awards')) ? state.personStats || {} : {},
       current,
       // Final Jeopardy (js/finale.js): ohne Einsätze, Antworten und Lösung vor dem Aufdecken
       final: window.J && window.J.fj && !state.finished ? window.J.fj.publicFinal(set, state) : null,
@@ -774,8 +798,14 @@
   // ---------- Sounds (per Web Audio erzeugt, keine Dateien nötig) ----------
   const SOUND_KEY = 'jeopardy.sound';
   let audio = null;
+  // Standard für Geräte ohne eigene Wahl (Spielregel „soundDefault“, setzt die Spieler-Seite)
+  let soundDefault = true;
+  const setSoundDefault = (on) => { soundDefault = on !== false; };
   function soundOn() {
-    try { return localStorage.getItem(SOUND_KEY) !== 'off'; } catch (e) { return true; }
+    try {
+      const v = localStorage.getItem(SOUND_KEY);
+      return v === null ? soundDefault : v !== 'off';
+    } catch (e) { return soundDefault; }
   }
   function setSoundOn(on) {
     try { localStorage.setItem(SOUND_KEY, on ? 'on' : 'off'); } catch (e) {}
@@ -1279,7 +1309,7 @@
     exportGame, parseGame, MAX_GAME_FILE_BYTES,
     roomCode, newRoomCode, ROOM_KEY, peerId, publicState, escapeHtml, safeColor, safeNum, renderScores,
     THEMES, getTheme, applyTheme, setTheme,
-    penaltyFor, stealFor, sfx, startTimerMusic, stopTimerMusic, timerMusicOn, soundOn, setSoundOn, unlockAudio, audioUnlocked, renderTimer,
+    penaltyFor, stealFor, sfx, startTimerMusic, stopTimerMusic, timerMusicOn, soundOn, setSoundOn, setSoundDefault, unlockAudio, audioUnlocked, renderTimer,
     TIMER_MS: 15000,
     safeImg, compressImage, renderTurn, renderPodium, confetti, ranking,
     renderIntro, introCellClass,
