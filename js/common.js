@@ -16,14 +16,81 @@
     return (row + 1) * 100 * (round + 1);
   }
 
-  // Falsche Antwort kostet die Hälfte des Feldwerts
-  function penaltyFor(round, row) {
-    return pointsFor(round, row) / 2;
+  // Falsche Antwort kostet standardmäßig die Hälfte des Feldwerts; Option „penalty“: half | full | none
+  function penaltyFor(round, row, mode) {
+    const v = pointsFor(round, row);
+    return mode === 'full' ? v : mode === 'none' ? 0 : v / 2;
   }
 
-  // Geklaute Frage (nach einer falschen Antwort) bringt nur die Hälfte
-  function stealFor(round, row) {
-    return pointsFor(round, row) / 2;
+  // Geklaute Frage (nach einer falschen Antwort) bringt standardmäßig nur die Hälfte (Option „stealHalf“)
+  function stealFor(round, row, half) {
+    const v = pointsFor(round, row);
+    return half === false ? v : v / 2;
+  }
+
+  // ---------- Spielregeln / Optionen ----------
+  // EINE Liste für Editor (Voreinstellung im Set: set.options) und Host-Pult (Überschreibung pro Spiel:
+  // state.options). Auflösung: Host > Set > default (opt()). Neue Optionen = nur ein Eintrag hier.
+  // requires: wird nur wirksam, wenn die genannten Optionen den Wert haben (sonst gilt „aus“ bzw. default).
+  const OPTION_DEFS = [
+    { key: 'final', group: 'Finale & Daily Double', label: '⭐ Final Jeopardy', type: 'bool', default: true,
+      hint: 'Aus: kein Final-Jeopardy-Knopf, kein Ablauf.' },
+    { key: 'dd', group: 'Finale & Daily Double', label: '⭐ Daily Double', type: 'bool', default: true,
+      hint: 'Aus: markierte Felder werden wie normale Felder gespielt.' },
+    { key: 'ddRandom', group: 'Finale & Daily Double', label: '🎲 Daily Doubles zufällig', type: 'bool', default: false,
+      requires: { dd: true }, requiresHint: 'Braucht „Daily Double“.',
+      hint: '1 in Runde 1, 2 in Runde 2 (nie in der ersten Reihe) – statt der markierten Felder.' },
+    { key: 'jokerDouble', group: 'Joker', label: '🎲 Joker „Doppelt oder nichts“', type: 'bool', default: true },
+    { key: 'jokerHint', group: 'Joker', label: '💡 Joker „Tipp“', type: 'bool', default: true },
+    { key: 'jokerPass', group: 'Joker', label: '👉 Joker „Weitergeben“', type: 'bool', default: true,
+      requires: { turn: true }, requiresHint: 'Braucht „Am Zug“.' },
+    { key: 'steal', group: 'Punkte & Klauen', label: '🔔 Klauen per Buzzer nach falscher Antwort', type: 'bool', default: true,
+      hint: 'Aus: nach ✗ öffnet der Buzzer nicht automatisch, der Host kann ihn auch nicht mehr für Klau-Versuche öffnen.' },
+    { key: 'stealHalf', group: 'Punkte & Klauen', label: '½ Halbe Punkte für geklaute Fragen', type: 'bool', default: true,
+      requires: { steal: true }, requiresHint: 'Braucht „Klauen“.', hint: 'Aus: Geklaut zählt der volle Feldwert.' },
+    { key: 'penalty', group: 'Punkte & Klauen', label: '➖ Abzug bei falscher Antwort', type: 'choice', default: 'half',
+      choices: [['half', 'Halber Feldwert'], ['full', 'Voller Feldwert'], ['none', 'Kein Abzug']],
+      hint: 'Gilt nicht für Daily Double, Final Jeopardy und den Joker „Doppelt oder nichts“ (dort steht der Einsatz auf dem Spiel).' },
+    { key: 'turn', group: 'Spielablauf', label: '🎯 „Am Zug“ / Reihenfolge', type: 'bool', default: true,
+      hint: 'Aus: niemand ist am Zug, kein Banner. Joker „Weitergeben“ entfällt; „Doppelt oder nichts“ und „Tipp“ gehen dann nur noch für den Buzzer-Gewinner; beim Daily Double wählt der Host den Spieler.' },
+  ];
+  const OPTION_BY_KEY = Object.fromEntries(OPTION_DEFS.map((d) => [d.key, d]));
+
+  function validOptionValue(def, v) {
+    if (!def) return false;
+    if (def.type === 'bool') return typeof v === 'boolean';
+    return def.choices.some((c) => c[0] === v);
+  }
+
+  // Beliebiges Objekt → nur bekannte Schlüssel mit gültigem Wert
+  function cleanOptions(raw) {
+    const out = {};
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+    for (const d of OPTION_DEFS) if (validOptionValue(d, raw[d.key])) out[d.key] = raw[d.key];
+    return out;
+  }
+
+  // Wirksamer Wert: Host-Überschreibung (state.options) > Set-Voreinstellung (set.options) > Standard.
+  // Eine nicht erfüllte Abhängigkeit (requires) macht die Option wirkungslos (bool → false).
+  function opt(set, state, key) {
+    const def = OPTION_BY_KEY[key];
+    if (!def) return undefined;
+    for (const [k, v] of Object.entries(def.requires || {})) {
+      if (opt(set, state, k) !== v) return def.type === 'bool' ? false : def.default;
+    }
+    const so = state && state.options;
+    if (so && validOptionValue(def, so[key])) return so[key];
+    const se = set && set.options;
+    if (se && validOptionValue(def, se[key])) return se[key];
+    return def.default;
+  }
+  const effectiveOptions = (set, state) => Object.fromEntries(OPTION_DEFS.map((d) => [d.key, opt(set, state, d.key)]));
+
+  // Nach dem ersten gespielten Feld (oder bei laufender Frage / Final / Ende) sind Regeln gesperrt
+  function optionsLocked(state) {
+    if (!state) return false;
+    return !!(state.current || state.fj || state.finished ||
+      (state.used || []).some((r) => r.some((c) => c.some(Boolean))));
   }
 
   function defaultSet() {
@@ -83,7 +150,10 @@
         }
       }
     }
-    if (raw.ddRandom === true) base.ddRandom = true;
+    // Optionen (Voreinstellung); altes set.ddRandom wandert in set.options.ddRandom
+    const setOpts = cleanOptions(raw.options);
+    if (raw.ddRandom === true && setOpts.ddRandom === undefined) setOpts.ddRandom = true;
+    if (Object.keys(setOpts).length) base.options = setOpts;
     if (raw.final && typeof raw.final === 'object') {
       for (const k of Object.keys(base.final)) if (typeof raw.final[k] === 'string') base.final[k] = raw.final[k];
     }
@@ -167,11 +237,16 @@
     { id: 'pass', icon: '👉', name: 'Weitergeben', desc: 'Wer am Zug ist, gibt die Frage an jemand anderen weiter' },
   ];
   const jokerInfo = (id) => JOKERS.find((j) => j.id === id) || null;
+  const JOKER_OPTION = { double: 'jokerDouble', hint: 'jokerHint', pass: 'jokerPass' };
+  // opts = wirksame Optionen (effectiveOptions / publicState.opts); ohne opts sind alle Joker an
+  const jokerEnabled = (id, opts) => !opts || opts[JOKER_OPTION[id]] !== false;
+  const activeJokers = (opts) => JOKERS.filter((j) => jokerEnabled(j.id, opts));
 
   // Darf pid den Joker jetzt einsetzen? → null wenn ja, sonst ein kurzer Grund.
   // cur: aktuelle Frage (Host-Zustand oder öffentlicher Zustand), players: [{id, usedJokers}]
-  function jokerBlock(kind, { cur, players, turn, pid, target }) {
+  function jokerBlock(kind, { cur, players, turn, pid, target, opts }) {
     if (!jokerInfo(kind)) return 'Unbekannter Joker';
+    if (!jokerEnabled(kind, opts)) return 'Joker ist in diesem Spiel ausgeschaltet';
     const p = players.find((x) => x.id === pid);
     if (!p) return 'Nur für Spieler';
     if ((p.usedJokers || []).includes(kind)) return 'Schon benutzt';
@@ -228,10 +303,11 @@
   }
 
   // Punkte unter Berücksichtigung von „Doppelt oder nichts“
-  function judgePoints(round, row, { stolen, double }) {
+  // rules: { penalty: half|full|none, stealHalf: bool } – ohne Angabe die Standardregeln
+  function judgePoints(round, row, { stolen, double, penalty, stealHalf }) {
     const value = pointsFor(round, row);
-    const gain = stolen ? stealFor(round, row) : value;
-    return double ? { gain: gain * 2, penalty: value } : { gain, penalty: penaltyFor(round, row) };
+    const gain = stolen ? stealFor(round, row, stealHalf) : value;
+    return double ? { gain: gain * 2, penalty: value } : { gain, penalty: penaltyFor(round, row, penalty) };
   }
 
   // ---------- Verpixelte Bilder ----------
@@ -466,7 +542,7 @@
     return {
       round: 0, used: emptyUsed(), players: [], current: null, turn: null, finished: false,
       stats: {}, personStats: {}, statsShown: false, mode: 'single', teamSize: 3, history: [],
-      fj: null, ddAuto: [], ddRandom: null,
+      fj: null, ddAuto: [], options: {},
     };
   }
 
@@ -521,7 +597,8 @@
       history,
       fj: s.fj && typeof s.fj === 'object' ? s.fj : null,
       ddAuto: Array.isArray(s.ddAuto) ? s.ddAuto : [],
-      ddRandom: typeof s.ddRandom === 'boolean' ? s.ddRandom : null,
+      // Host-Überschreibungen der Spielregeln; altes state.ddRandom wandert hierher
+      options: cleanOptions({ ...(typeof s.ddRandom === 'boolean' ? { ddRandom: s.ddRandom } : {}), ...(isObj(s.options) ? s.options : {}) }),
     };
     if (resume) {
       out.history = history.map((h) => (isObj(h.current) ? { ...h, current: stripLive(h.current) } : h));
@@ -656,7 +733,9 @@
       })),
       mode: state.mode === 'team' ? 'team' : 'single',
       teamSize: clampTeamSize(state.teamSize),
-      turn: state.turn || null,
+      turn: opt(set, state, 'turn') ? state.turn || null : null,
+      // Spielregeln, die Spieler/TV kennen müssen (Joker-Leiste, „Am Zug“)
+      opts: Object.fromEntries(['jokerDouble', 'jokerHint', 'jokerPass', 'turn', 'penalty', 'stealHalf'].map((k) => [k, opt(set, state, k)])),
       finished: !!state.finished,
       statsShown: !!state.statsShown && !!state.finished,
       stats: state.stats || {},
@@ -1193,7 +1272,7 @@
     copyCategories, mixSets, parseSetFile, pickCategory, MAX_SET_FILE_BYTES,
     safeMedia, mediaTypeOf, mediaFileError, MEDIA_LIMITS,
     PIXEL_STEPS, ZOOM_STEPS, imgSteps, imgMode, pixelLevel, pixelate, zoomCrop,
-    CLUE_KINDS, isSpecialKind, parseNumber, estimateWinners, orderItems, shufflePerm, isPerm, orderCorrect, JOKERS, jokerInfo, jokerBlock, whoIsUp, hintPattern, judgePoints,
+    CLUE_KINDS, isSpecialKind, parseNumber, estimateWinners, orderItems, shufflePerm, isPerm, orderCorrect, JOKERS, jokerInfo, jokerEnabled, activeJokers, jokerBlock, OPTION_DEFS, opt, effectiveOptions, cleanOptions, optionsLocked, whoIsUp, hintPattern, judgePoints,
     APP_VERSION, CATS, ROWS, ROUNDS, SET_KEY,
     pointsFor, defaultSet, normalizeSet, defaultState,
     loadSet, saveSet, loadState, normalizeState, saveState,

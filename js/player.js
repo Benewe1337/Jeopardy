@@ -276,7 +276,8 @@
     st.hidden = false;
     const n = data.submitted.length;
     const mine = isPlayer && data.submitted.includes(me);
-    const risk = kind === 'estimate' ? '' : ` · Falsch kostet −${cur.value / 2}`;
+    const pen = J.penaltyFor(last.round, cur.row, last.opts && last.opts.penalty);
+    const risk = kind === 'estimate' || !pen ? '' : ` · Falsch kostet −${pen}`;
     st.textContent = (kind === 'estimate' ? `🔢 ${n}/${total} haben getippt` : kind === 'choice' ? `🅰️ ${n}/${total} haben gewählt${risk}` : `↕️ ${n}/${total} haben abgegeben${risk}`) +
       (mine && isTeamMode() && teamBy && teamBy !== myName ? ` · ${teamBy} hat für euch abgegeben` : '') +
       (mine ? (isTeamMode()
@@ -427,14 +428,16 @@
     const myHint = cur && mePlayer && (cur.jokers.hint || []).includes(me) && hints[clueKey];
     hintBox.hidden = !myHint;
     if (myHint) hintBox.innerHTML = `<span class="hint-label">💡 Tipp</span><span class="hint-text">${J.escapeHtml(myHint)}</span>`;
-    if (!cur || !mePlayer || cur.revealed || (cur.kind && cur.kind !== 'normal')) { bar.hidden = true; return; }
-    const ctx = { cur, players: last.players, turn: last.turn, pid: me };
+    const jokers = J.activeJokers(last.opts);
+    // Alle Joker ausgeschaltet: gar keine Leiste
+    if (!jokers.length || !cur || !mePlayer || cur.revealed || (cur.kind && cur.kind !== 'normal')) { bar.hidden = true; bar.innerHTML = ''; bar.__sig = null; return; }
+    const ctx = { cur, players: last.players, turn: last.turn, pid: me, opts: last.opts };
     const double = (cur.jokers.double || []).includes(me);
     bar.hidden = false;
     // Nur neu zeichnen, wenn sich an der Leiste etwas ändert – sonst springen die Knöpfe bei jedem
     // Update vom Host weg, gerade übers Relay, und ein Tipp geht ins Leere
     const sig = JSON.stringify([clueKey, double, !!cur.dd, cur.dd && cur.dd.phase, jokerArmed, passOpen, mePlayer.usedJokers,
-      J.JOKERS.map((j) => J.jokerBlock(j.id, ctx)), last.players.map((p) => [p.id, p.name])]);
+      jokers.map((j) => J.jokerBlock(j.id, ctx)), last.players.map((p) => [p.id, p.name])]);
     if (bar.__sig === sig && bar.childElementCount) return;
     bar.__sig = sig;
     bar.innerHTML = '';
@@ -446,7 +449,7 @@
     }
     const row = document.createElement('div');
     row.className = 'joker-row';
-    J.JOKERS.forEach((j) => {
+    jokers.forEach((j) => {
       const used = (mePlayer.usedJokers || []).includes(j.id);
       const block = J.jokerBlock(j.id, ctx);
       const btn = document.createElement('button');
@@ -466,7 +469,7 @@
       row.appendChild(btn);
     });
     bar.appendChild(row);
-    if (cur.dd) {
+    if (cur.dd && jokers.some((j) => j.id === 'hint')) {
       const note = document.createElement('div');
       note.className = 'joker-reason';
       note.textContent = 'Daily Double: „Doppelt oder nichts“ und „Weitergeben“ sind gesperrt – nur der Tipp geht.';
@@ -739,7 +742,7 @@
     } else if (locked) {
       text = 'Zu früh gedrückt – kurz gesperrt';
     } else if (canBuzz && Object.values(judged).includes('wrong')) {
-      text = `Klauen bringt +${cur.value / 2}`;
+      text = `Klauen bringt +${last.opts && last.opts.stealHalf === false ? cur.value : cur.value / 2}`;
     } else if (canBuzz && cur.pixel) {
       text = 'Erkannt? Wer zuerst buzzert, darf antworten';
     } else if (buzz.open && isPlayer && judged[me]) {

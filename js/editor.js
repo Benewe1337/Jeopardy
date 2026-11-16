@@ -313,6 +313,7 @@
         // Daily Double: Spieler sehen vorher nichts davon; der Host sieht die Markierung im Pult
         const dd = document.createElement('label');
         dd.className = 'ed-dd';
+        dd.hidden = !J.opt(set, null, 'dd');
         dd.title = 'Wer am Zug ist, setzt Punkte und beantwortet die Frage allein (kein Buzzer, kein Klauen).';
         const ddBox = document.createElement('input');
         ddBox.type = 'checkbox';
@@ -329,13 +330,26 @@
       });
       grid.appendChild(col);
     });
-    $('ddRandomBox').checked = !!set.ddRandom;
+    // Ausgeschaltete Funktionen verschwinden auch im Editor
+    $('fjEditor').hidden = !J.opt(set, null, 'final');
     if (J.fjEditor) J.fjEditor.render(set, persist);
+    renderOptions();
   }
-  $('ddRandomBox').addEventListener('change', () => {
-    if ($('ddRandomBox').checked) set.ddRandom = true; else delete set.ddRandom;
+
+  // Spielregeln: Voreinstellung im Set (set.options); gleich dem Standard → Eintrag weglassen
+  function setOption(key, value) {
+    const next = J.cleanOptions({ [key]: value });
+    if (!(key in next)) return;
+    const def = J.OPTION_DEFS.find((d) => d.key === key);
+    const opts = { ...(set.options || {}), ...next };
+    if (opts[key] === def.default) delete opts[key];
+    if (Object.keys(opts).length) set.options = opts; else delete set.options;
     persist();
-  });
+    render();
+  }
+  function renderOptions() {
+    J.optionsUI.render($('optionsList'), { value: (k) => J.opt(set, null, k), locked: false, onChange: setOption });
+  }
 
   titleEl.addEventListener('input', () => { set.title = titleEl.value; persist(); });
 

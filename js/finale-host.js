@@ -14,7 +14,7 @@
   // ---------- Ablauf ----------
   function start() {
     const state = st();
-    if (!F().hasFinal(api.set()) || !state.players.length || state.current || state.fj) return;
+    if (!F().finalOn(api.set(), state) || !state.players.length || state.current || state.fj) return;
     api.mutate('⭐ Final Jeopardy gestartet', () => {
       state.fj = F().newFinal(state.players);
       state.finished = false;
@@ -110,6 +110,9 @@
   function renderStartButton() {
     const state = st();
     const btn = $('fjBtn');
+    // Option „Final Jeopardy“ aus: weder Knopf noch Hinweis
+    const on = J.opt(api.set(), state, 'final');
+    btn.hidden = !on && !state.fj;
     const has = F().hasFinal(api.set());
     const reason = !has ? 'Dieses Set hat keine Final-Jeopardy-Frage. Im Editor unter „Final Jeopardy“ ergänzen.'
       : !state.players.length ? 'Erst Spieler bzw. Teams anlegen.'
@@ -118,7 +121,7 @@
     btn.disabled = !!reason;
     btn.title = reason || 'Final Jeopardy starten (meist nach Runde 2)';
     // Hinweis nur zeigen, wenn es am Set liegt – sonst wäre der ausgegraute Knopf unerklärlich
-    $('fjHint').hidden = has;
+    $('fjHint').hidden = has || !on;
     $('fjHint').textContent = has ? '' : 'Final Jeopardy ist für dieses Set nicht angelegt (Editor → „Final Jeopardy“).';
   }
 

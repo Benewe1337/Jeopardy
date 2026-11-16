@@ -3,6 +3,8 @@
   let state = J.loadState();
   const HISTORY_LIMIT = 200;
   const $ = (id) => document.getElementById(id);
+  // Wirksame Spielregel (Host > Set > Standard), z. B. rule('steal')
+  const rule = (key) => J.opt(set, state, key);
   JMedia.host({ $, conns: () => conns });
 
   // ---------- State-Änderungen mit Undo ----------
@@ -72,12 +74,12 @@
     J.renderIntro($('intro'), J.publicState(set, state).intro,
       state.round, Array.from({ length: J.ROWS }, (_, row) => J.pointsFor(state.round, row)));
     $('introBtn').disabled = !!state.current || !!state.intro;
-    J.renderTurn($('turnBanner'), state.players, state.turn);
+    J.renderTurn($('turnBanner'), state.players, rule('turn') ? state.turn : null);
     $('r0').className = state.round === 0 ? 'primary' : '';
     $('r1').className = state.round === 1 ? 'primary' : '';
     $('undo').disabled = state.history.length === 0;
     if (J.fjHost) J.fjHost.render();
-    $('ddRandom').checked = J.dd.randomOn(set, state);
+    renderOptions();
   }
 
   function renderBoard() {
@@ -248,7 +250,7 @@
     winners = winners.filter((id) => state.players.some((p) => p.id === id));
     // Multiple Choice und Reihenfolge: wer falsch abgegeben hat, verliert den halben Wert (wie sonst bei ✗).
     // Schätzfrage: kein Abzug – da liegt fast jeder daneben, es zählt nur, wer am nächsten ist.
-    const penalty = J.penaltyFor(cur.round, cur.row);
+    const penalty = J.penaltyFor(cur.round, cur.row, rule('penalty'));
     const answers = cur.kind === 'choice' ? cur.mc.answers : cur.kind === 'order' ? cur.ord.answers : {};
     const losers = Object.keys(answers).filter((id) => !winners.includes(id) && state.players.some((p) => p.id === id));
     const label = [winners.length ? `${winners.map(nameOf).join(', ')} +${value}` : 'niemand richtig',
@@ -296,18 +298,18 @@
       if (has && cur.kind === 'order') detail = (J.orderCorrect(answers[p.id]) ? '✓ ' : '✗ ') + answers[p.id].map((i) => items[i]).join(' → ');
       const won = cur.judged[p.id] === 'right';
       const lost = cur.judged[p.id] === 'wrong';
-      const pen = cur.dd ? value : J.penaltyFor(cur.round, cur.row);
+      const pen = cur.dd ? value : J.penaltyFor(cur.round, cur.row, rule('penalty'));
       return `<div class="srow${won ? ' won' : ''}${lost ? ' lost' : ''}"><span class="name">${J.escapeHtml(p.name)}</span><span>${J.escapeHtml(detail)}${won ? ` · +${value}` : ''}${lost ? ` · −${pen}` : ''}</span></div>`;
     }).join('');
     const total = cur.dd ? 1 : state.players.length;
     const head = cur.kind === 'estimate' ? `🔢 Schätzfrage – ${n}/${total} getippt`
       : cur.kind === 'choice' ? `🅰️ Multiple Choice – ${n}/${total} gewählt` : `↕️ Reihenfolge – ${n}/${total} abgegeben`;
-    const pen = cur.dd ? value : J.penaltyFor(cur.round, cur.row);
-    const rule = cur.dd ? `Daily Double: richtig +${value}, falsch −${value} (voller Einsatz). Du kannst auch von Hand mit ✓/✗ werten` : cur.kind === 'estimate' ? `Wer am nächsten dran ist, bekommt +${value} (kein Abzug)`
+    const pen = cur.dd ? value : J.penaltyFor(cur.round, cur.row, rule('penalty'));
+    const ruleText = cur.dd ? `Daily Double: richtig +${value}, falsch −${value} (voller Einsatz). Du kannst auch von Hand mit ✓/✗ werten` : cur.kind === 'estimate' ? `Wer am nächsten dran ist, bekommt +${value} (kein Abzug)`
       : cur.kind === 'choice' ? `Richtig: +${value}, falsch: −${pen}, keine Abgabe: 0`
         : `Komplett richtige Reihenfolge: +${value}, sonst −${pen}, keine Abgabe: 0`;
     box.innerHTML = `<div class="special-head">${head}</div>${rows}` +
-      (cur.revealed ? '' : `<div class="hint">${rule}. Abgaben lassen sich bis zum Auflösen ändern.</div>`);
+      (cur.revealed ? '' : `<div class="hint">${ruleText}. Abgaben lassen sich bis zum Auflösen ändern.</div>`);
   }
 
   // ---------- Daily Double ----------
@@ -348,7 +350,7 @@
     if (!cur || !cur.dd || cur.dd.phase === 'play' || !p) return;
     mutate(`⭐ Daily Double: ${p.name} spielt`, () => {
       cur.dd.pid = pid;
-      state.turn = pid;
+      if (rule('turn')) state.turn = pid;
     });
   }
 
@@ -439,7 +441,7 @@
         (p
           ? `<div class="hint">Einsatz ${J.dd.MIN_WAGER}–${max}. Das Handy von ${J.escapeHtml(p.name)} fragt danach; du kannst ihn auch selbst eintippen:</div>
             <form class="dd-host-form" id="ddHostForm" novalidate><input id="ddHostWager" type="number" min="${J.dd.MIN_WAGER}" max="${max}" step="1" placeholder="${J.dd.MIN_WAGER}–${max}" autocomplete="off"><button class="primary small" type="submit">Einsatz setzen</button></form>`
-          : '<div class="hint">Niemand ist am Zug – wähle, wer das Daily Double spielt.</div>') +
+          : `<div class="hint">${rule('turn') ? 'Niemand ist am Zug – wähle' : 'Wähle'}, wer das Daily Double spielt.</div>`) +
         `<div class="dd-picks">${p ? 'Anderer Spieler: ' : ''}${picks}</div>`;
     }
     const skip = el.querySelector('#ddSkip');
@@ -455,6 +457,9 @@
     }
   }
 
+  // Option „Klauen“ aus: nach einer falschen Antwort darf der Buzzer nicht mehr geöffnet werden
+  const stealAllowed = (cur) => rule('steal') || !Object.values((cur && cur.judged) || {}).includes('wrong');
+
   // ---------- Joker ----------
   function handleJoker(conn, msg) {
     const pid = conn.playerId;
@@ -462,7 +467,7 @@
     const target = kind === 'pass' ? msg.target : undefined;
     if (kind === 'pass' && typeof target !== 'string') return;
     const cur = state.current;
-    if (J.jokerBlock(kind, { cur, players: state.players, turn: state.turn, pid, target })) return;
+    if (J.jokerBlock(kind, { cur, players: state.players, turn: rule('turn') ? state.turn : null, pid, target, opts: J.effectiveOptions(set, state) })) return;
     const p = state.players.find((x) => x.id === pid);
     const info = J.jokerInfo(kind);
     const who = isTeam() && conn.memberName ? `${conn.memberName} (${p.name})` : p.name;
@@ -576,12 +581,12 @@
     // Daily Double: Clip erst nach dem Einsatz, sonst hören TV/Host den Hinweis vor dem Wetten
     JMedia.hostClue(cur.dd && cur.dd.phase !== 'play' ? null : clue, `${cur.round}:${cur.cat}:${cur.row}`);
     const value = J.pointsFor(cur.round, cur.row);
-    const penalty = J.penaltyFor(cur.round, cur.row);
+    const penalty = J.penaltyFor(cur.round, cur.row, rule('penalty'));
     const judged = cur.judged || (cur.judged = {});
     const solved = Object.values(judged).includes('right');
     // Geklaut: Hat schon jemand falsch geantwortet, gibt es für die richtige Antwort nur die Hälfte
     const stolen = Object.values(judged).includes('wrong');
-    const gain = stolen ? J.stealFor(cur.round, cur.row) : value;
+    const gain = stolen ? J.stealFor(cur.round, cur.row, rule('stealHalf')) : value;
     $('clueMeta').textContent = (cur.dd ? '⭐ Daily Double · ' : '') + `${cat.name} – ${cur.dd && cur.dd.wager != null ? 'Einsatz ' + cur.dd.wager : value}` + (cur.revealed ? ' · Antwort ist für Spieler sichtbar' : '');
     $('clueQ').textContent = clue.q;
     // Verpixelt: Host sieht dasselbe wie die Spieler (die Antwort steht ja darunter)
@@ -640,7 +645,8 @@
     $('jokerStatus').textContent = jparts.join(' · ');
     $('jokerStatus').hidden = !jparts.length;
     $('buzzBtn').textContent = buzz.open ? 'Buzzer schließen' : 'Buzzer öffnen';
-    $('buzzBtn').disabled = solved;
+    $('buzzBtn').disabled = solved || !stealAllowed(cur);
+    $('buzzBtn').title = stealAllowed(cur) ? '' : 'Klauen ist in den Spielregeln ausgeschaltet';
     $('timerBtn').textContent = cur.timer ? '⏱ Neu starten' : '⏱ 15 s Timer';
     $('timerStop').hidden = !cur.timer;
     if (cur.timer) J.renderTimer($('timerBox'), Math.max(0, cur.timer.endsAt - Date.now()), cur.timer.total);
@@ -657,7 +663,7 @@
       const rowEl = document.createElement('div');
       const isWinner = (buzz.winner === p.id || (pass && pass.to === p.id && !buzz.winner)) && !verdict;
       const double = (jk.double || []).includes(p.id);
-      const { gain, penalty } = J.judgePoints(cur.round, cur.row, { stolen, double });
+      const { gain, penalty } = J.judgePoints(cur.round, cur.row, { stolen, double, penalty: rule('penalty'), stealHalf: rule('stealHalf') });
       rowEl.className = 'jrow' + (verdict ? ' ' + verdict : '') + (isWinner ? ' buzzed' : '');
       const name = document.createElement('span');
       name.className = 'name';
@@ -668,7 +674,7 @@
       if (verdict) {
         const tag = document.createElement('span');
         tag.className = 'verdict';
-        tag.textContent = verdict === 'right' ? `✓ +${gain}` + (stolen ? ' (geklaut)' : '') : `✗ −${penalty}`;
+        tag.textContent = verdict === 'right' ? `✓ +${gain}` + (stolen ? ' (geklaut)' : '') : (penalty ? `✗ −${penalty}` : '✗ ±0');
         rowEl.append(name, tag);
         judge.appendChild(rowEl);
         return;
@@ -676,7 +682,7 @@
       const ok = document.createElement('button');
       ok.className = 'green small';
       ok.textContent = `✓ +${gain}`;
-      if (stolen) ok.title = 'Geklaut: halbe Punkte';
+      if (stolen) ok.title = rule('stealHalf') ? 'Geklaut: halbe Punkte' : 'Geklaut: voller Feldwert';
       ok.disabled = solved;
       ok.addEventListener('click', () => {
         mutate(`${p.name} richtig (+${gain}${stolen ? ', geklaut' : ''})`, () => {
@@ -692,17 +698,17 @@
       });
       const bad = document.createElement('button');
       bad.className = 'red small';
-      bad.textContent = `✗ −${penalty}`;
+      bad.textContent = penalty ? `✗ −${penalty}` : '✗ ±0';
       bad.disabled = solved;
       bad.addEventListener('click', () => {
         let opened = false;
-        mutate(`${p.name} falsch (−${penalty})`, () => {
+        mutate(`${p.name} falsch (${penalty ? '−' + penalty : '±0'})`, () => {
           p.score -= penalty;
           state.current.judged[p.id] = 'wrong';
           recordVerdict(p.id, 'wrong', false);
           state.current.timer = null;
           // Klauen: Buzzer öffnet für alle, die noch nicht gewertet wurden
-          opened = unjudged().length > 0;
+          opened = rule('steal') && unjudged().length > 0;
           state.current.buzz = opened ? { open: false, winner: null, arming: true } : closedBuzz();
         });
         sound('wrong');
@@ -770,7 +776,7 @@
       del.addEventListener('click', () => {
         if (confirm(`${p.name} entfernen?`)) {
           mutate(`${p.name} entfernt`, () => {
-            state.turn = J.turnAfterRemoval(ids(), state.turn, p.id);
+            state.turn = rule('turn') ? J.turnAfterRemoval(ids(), state.turn, p.id) : null;
             state.players = state.players.filter((x) => x.id !== p.id);
           });
         }
@@ -783,7 +789,8 @@
       turnBtn.addEventListener('click', () =>
         mutate(hasTurn ? 'Niemand am Zug' : `${p.name} ist am Zug`, () => { state.turn = hasTurn ? null : p.id; })
       );
-      btns.append(turnBtn, plus, minus, del);
+      if (rule('turn')) btns.append(turnBtn);
+      btns.append(plus, minus, del);
       row.append(name, score, btns);
       if (isTeam()) {
         const names = teamMembers().get(p.id) || [];
@@ -823,13 +830,14 @@
     mutate('Frage geschlossen', () => {
       state.used[cur.round][cur.cat][cur.row] = true;
       state.current = null;
-      state.turn = J.nextTurn(ids(), state.turn);
+      state.turn = rule('turn') ? J.nextTurn(ids(), state.turn) : null;
     });
   });
   $('cancel').addEventListener('click', () =>
     mutate('Frage abgebrochen', () => { state.current = null; })
   );
   $('buzzBtn').addEventListener('click', () => {
+    if (!stealAllowed(state.current)) return;
     const open = !state.current.buzz.open;
     mutate(open ? 'Buzzer geöffnet' : 'Buzzer geschlossen', () => {
       state.current.buzz = open ? openBuzz() : closedBuzz();
@@ -979,12 +987,39 @@
     dealTimer = setTimeout(() => $('board').classList.remove('deal'), 2000);
     commit();
   }
-  $('ddRandom').addEventListener('change', () => {
-    state.ddRandom = $('ddRandom').checked;
-    state.ddAuto = []; // beim Umschalten neu auslosen
+  // ---------- Spielregeln (Überschreibung pro Spiel, nur vor dem ersten Feld) ----------
+  function setOption(key, value) {
+    if (J.optionsLocked(state)) return; // Host erzwingt die Sperre, nicht nur die Oberfläche
+    const next = J.cleanOptions({ [key]: value });
+    if (!(key in next)) return;
+    state.options = { ...state.options, ...next };
+    afterOptionsChange();
+  }
+  function resetOptions() {
+    if (J.optionsLocked(state)) return;
+    state.options = {};
+    afterOptionsChange();
+  }
+  function afterOptionsChange() {
+    if (!rule('turn')) state.turn = null;
+    else if (!state.turn && state.players.length) state.turn = state.players[0].id;
+    state.ddAuto = []; // Auslosung bei jeder Änderung neu
     ensureRandomDd();
     commit();
-  });
+  }
+  function renderOptions() {
+    const locked = J.optionsLocked(state);
+    const changed = Object.keys(state.options).length > 0;
+    $('optionsState').textContent = locked ? '(gesperrt – Spiel läuft)' : changed ? '(für dieses Spiel geändert)' : '';
+    J.optionsUI.render($('optionsList'), {
+      value: (k) => rule(k),
+      locked,
+      lockedNote: 'Nach dem ersten Feld gesperrt – „Spielstand zurücksetzen“ gibt die Regeln wieder frei.',
+      onChange: setOption,
+      onReset: changed && !locked ? resetOptions : null,
+      resetLabel: 'Alle auf die Voreinstellung des Sets zurücksetzen',
+    });
+  }
   $('introBtn').addEventListener('click', startIntro);
   $('introSkip').addEventListener('click', () => stopIntro(true));
   $('undo').addEventListener('click', undo);
@@ -994,7 +1029,7 @@
     if (!name) return;
     mutate(`${name} hinzugefügt`, () => {
       state.players.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, score: 0 });
-      if (!state.turn) state.turn = state.players[0].id; // Der Erste in der Liste beginnt
+      if (rule('turn') && !state.turn) state.turn = state.players[0].id; // Der Erste in der Liste beginnt
     });
     $('newName').value = '';
   });
@@ -1005,7 +1040,7 @@
       state.players.forEach((p) => { p.score = 0; p.usedJokers = []; });
       state.current = null;
       state.round = 0;
-      state.turn = state.players.length ? state.players[0].id : null;
+      state.turn = rule('turn') && state.players.length ? state.players[0].id : null;
       state.finished = false;
       state.statsShown = false;
       state.stats = {};

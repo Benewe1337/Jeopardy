@@ -114,9 +114,11 @@
           <input type="file" id="importFile" accept=".json,application/json" hidden>
         </div>
         <p class="hint" id="fileMsg" role="status">Die Spielstand-Datei enthält die Antworten – nicht an Spieler weitergeben.</p>
-        <label class="dd-random" title="Beim Rundenstart werden die Felder gelost (nie in der ersten Reihe). Ersetzt im Set markierte Felder.">
-          <input type="checkbox" id="ddRandom"> 🎲 Zufällige Daily Doubles (1 in Runde 1, 2 in Runde 2)
-        </label>
+        <details class="turn-box options-box" id="optionsBox">
+          <summary>⚙️ Spielregeln <span class="turn-state" id="optionsState"></span></summary>
+          <p class="hint">Gelten für dieses Spiel; die Voreinstellung steht im Editor beim Set.</p>
+          <div id="optionsList"></div>
+        </details>
         <p class="hint" id="fjHint" hidden></p>
         <p class="hint">Änderungen im Editor-Tab werden sofort übernommen.</p>
         <details class="turn-box" id="gameBox" hidden></details>
@@ -165,6 +167,7 @@
   <script src="vendor/qrcode.js"></script>
   <script src="js/qr.js"></script>
   <script src="js/common.js"></script>
+  <script src="js/options-ui.js"></script>
   <script src="js/media.js"></script>
   <script src="js/net.js"></script>
   <script src="js/gamesync.js"></script>
