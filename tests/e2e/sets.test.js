@@ -27,8 +27,6 @@ async function clickWithDialog(page, sel, answer) {
   await page.click(sel);
 }
 
-// Wartet, bis die verzögerte Speicherung durch ist
-const settle = (page) => page.waitForTimeout(1200);
 
 test('Fragensets verwalten und wechseln', async (t) => {
   const ed = await env.page();
@@ -52,7 +50,6 @@ test('Fragensets verwalten und wechseln', async (t) => {
     assert.deepEqual(await options(ed), ['*Mein Fragenset']);
     assert.equal(await ed.textContent('#setSource'), SERVER ? '☁ Auf dem Server gespeichert' : '💾 Nur in diesem Browser gespeichert');
     await ed.fill('.ed-cat input', 'Tiere');
-    await settle(ed);
   });
 
   await t.test('Neues Set ist leer und wird aktiv', async () => {
@@ -61,7 +58,6 @@ test('Fragensets verwalten und wechseln', async (t) => {
     assert.deepEqual(await options(ed), ['*Anime', 'Mein Fragenset']);
     assert.equal(await firstCat(ed), 'Kategorie 1');
     await ed.fill('.ed-cat input', 'Naruto');
-    await settle(ed);
   });
 
   await t.test('Wechsel lädt das Set, Host-Pult übernimmt es live', async () => {

@@ -195,4 +195,68 @@ async function joinPlayer(env, code, { pick, name, viewport = PHONE, sfx = true 
 const scoresOf = (page, sel = '#scores') =>
   page.$$eval(`${sel} .score-value`, (els) => els.map((e) => e.textContent).join(','));
 
-module.exports = { TRANSPORT, HOST_PASSWORD, startEnv, startTurn, openHost, joinPlayer, scoresOf, PHONE, TEST_PNG };
+// Kurzlebige Zustände (Animationsklassen, Buzzer „Zu früh!“, Timer-Box) lassen sich unter Last nicht
+// per Polling erwischen: sie verschwinden, bevor der Test hinsieht. Deshalb zeichnet ein
+// MutationObserver in der Seite auf, welche Klassen/Sichtbarkeiten Elemente je hatten (in Reihenfolge,
+// samt Text zum Zeitpunkt der Änderung). Der Test wartet dann auf die Aufzeichnung, nicht auf den Moment.
+//   Schlüssel: '#id.klasse' (Element mit id), '#vorfahr .klasse' (ohne id), '#id:shown' / '#id:hidden'
+async function trackUi(page) {
+  await page.evaluate(() => {
+    if (window.__ui) return;
+    const ui = window.__ui = { seq: [], seen: new Set(), text: {} };
+    const note = (key, el) => { ui.seq.push(key); ui.seen.add(key); ui.text[key] = el.textContent; };
+    const keyFor = (el, token) => {
+      if (el.id) return `#${el.id}.${token}`;
+      const anc = el.closest('[id]');
+      return `${anc ? '#' + anc.id + ' ' : ''}.${token}`;
+    };
+    const scan = (el) => {
+      if (el.classList) el.classList.forEach((c) => note(keyFor(el, c), el));
+      if (el.id && 'hidden' in el) note(`#${el.id}:${el.hidden ? 'hidden' : 'shown'}`, el);
+    };
+    document.querySelectorAll('*').forEach(scan);
+    new MutationObserver((records) => {
+      for (const r of records) {
+        if (r.type === 'attributes') scan(r.target);
+        else r.addedNodes.forEach((n) => { if (n.nodeType === 1) { scan(n); n.querySelectorAll('*').forEach(scan); } });
+      }
+    }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'hidden'] });
+  });
+}
+// Auf eine aufgezeichnete Klasse/Sichtbarkeit warten (ab trackUi/uiReset)
+const uiSeen = (page, key) => page.waitForFunction((k) => window.__ui.seen.has(k), key);
+const uiReset = (page) => page.evaluate(() => { window.__ui.seq.length = 0; window.__ui.seen.clear(); window.__ui.text = {}; });
+const uiSeq = (page) => page.evaluate(() => [...window.__ui.seq]);
+const uiText = (page, key) => page.evaluate((k) => window.__ui.text[k], key);
+
+// Ebenso für Texte: jeder Inhalt, den das Element je hatte (auch kurzlebige Statusmeldungen)
+async function trackText(page, sel) {
+  await page.evaluate((q) => {
+    const el = document.querySelector(q);
+    const all = window.__texts || (window.__texts = {});
+    if (all[q]) return;
+    const log = all[q] = [el.textContent];
+    new MutationObserver(() => { log.push(el.textContent); })
+      .observe(el, { subtree: true, childList: true, characterData: true });
+  }, sel);
+}
+// Jede Änderung (auch gleicher Text neu gesetzt) wird protokolliert; `since` = textMark vor der Aktion
+const textMark = (page, sel) => page.evaluate((q) => window.__texts[q].length, sel);
+const textSeen = (page, sel, re, since = 0) => page.waitForFunction(([q, src, n]) => window.__texts[q].slice(n).some((t) => new RegExp(src).test(t)), [sel, re.source, since]);
+
+// Wie oft hat der Host die Spielerliste neu gezeichnet? (Jede Verbindungs-/Namensänderung zeichnet neu.)
+// Mit waitForRenders wartet ein Test, bis der Host eine Änderung nach einem bekannten Zeitpunkt verarbeitet hat.
+async function countRenders(page, sel = '#players') {
+  await page.evaluate((s) => {
+    if (window.__renders != null) return;
+    window.__renders = 0;
+    new MutationObserver((r) => { window.__renders += r.length; }).observe(document.querySelector(s), { childList: true });
+  }, sel);
+  return page.evaluate(() => window.__renders);
+}
+const waitForRenders = (page, since) => page.waitForFunction((n) => window.__renders > n, since);
+
+module.exports = {
+  TRANSPORT, HOST_PASSWORD, startEnv, startTurn, openHost, joinPlayer, scoresOf, PHONE, TEST_PNG,
+  trackUi, uiSeen, uiReset, uiSeq, uiText, trackText, textSeen, textMark, countRenders, waitForRenders,
+};

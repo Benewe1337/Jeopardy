@@ -1,7 +1,7 @@
 // Grundablauf: Editor, Host und Spieler, verdeckte Antworten, Punkte, Reihenfolge, Undo, Themes
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { startEnv, openHost, joinPlayer, scoresOf } = require('./helpers');
+const { startEnv, openHost, joinPlayer, scoresOf, trackText, textSeen } = require('./helpers');
 
 let env;
 test.before(async () => { env = await startEnv({ JEOP_BUZZ_DELAY_MS: 150, JEOP_INTRO_MS: 300 }); });
@@ -53,10 +53,12 @@ test('Kompletter Spielablauf zwischen Host und Spieler', async (t) => {
   });
 
   await t.test('Falsch kostet die Hälfte, geklaut bringt die Hälfte', async () => {
+    // Die „±50“-Einblendung hängt an einem Render und ist nach dem nächsten Zustand weg: mitschreiben
+    await trackText(anna, '#overlayScores');
     await host.locator('.jrow').nth(1).locator('.red').click(); // Ben falsch
-    await anna.waitForSelector('#overlayScores .delta.neg:text-is("−50")');
+    await textSeen(anna, '#overlayScores', /−50/);
     await host.locator('.jrow').nth(0).locator('.green').click(); // Anna richtig (geklaut)
-    await anna.waitForSelector('#overlayScores .delta.pos:text-is("+50")');
+    await textSeen(anna, '#overlayScores', /\+50/);
     const verdicts = await host.locator('#judge .verdict').allTextContents();
     assert.deepEqual(verdicts, ['✓ +50 (geklaut)', '✗ −50']);
     await anna.waitForFunction(() => document.getElementById('a').textContent === 'GEHEIM-1989');

@@ -9,7 +9,6 @@ let env;
 test.before(async () => { env = await startEnv(); });
 test.after(async () => { await env.stop(); });
 
-const settle = (page) => page.waitForTimeout(1200);
 const cats = (page) => page.$$eval('.ed-cat > input', (els) => els.map((e) => e.value));
 
 async function unlock(page) {
@@ -70,7 +69,6 @@ test('Katalog durchsuchen, einfügen und Spiel automatisch zusammenstellen', asy
     await ed.click('.tabs button[data-round="1"]');
     assert.equal((await cats(ed))[2], 'Tiere');
     assert.match(await ed.locator('.ed-cat').nth(2).locator('textarea').nth(0).inputValue(), /Jungtier/);
-    await settle(ed);
   });
 
   await t.test('Einfügen ohne Auswahl meldet sich', async () => {
@@ -95,7 +93,6 @@ test('Katalog durchsuchen, einfügen und Spiel automatisch zusammenstellen', asy
       return [a.map(lv), b.map(lv)];
     }, [r1, r2]);
     assert.ok(level[0].every((l) => l === 'runde1') && level[1].every((l) => l === 'runde2'));
-    await settle(ed);
 
     // Zweites Spiel: kein Treffer aus dem ersten (Katalog hat genug frische Kategorien)
     ed.nextDialog = 'Auto 2';
@@ -106,7 +103,6 @@ test('Katalog durchsuchen, einfügen und Spiel automatisch zusammenstellen', asy
     again.push(...(await cats(ed)));
     // Runde 1 stand nach dem Wechsel zuerst im Editor
     assert.ok(again.every((n) => ![...r1, ...r2].includes(n)), 'Kategorien wiederholt: ' + again);
-    await settle(ed);
   });
 
   await t.test('Das Spiel lässt sich im Host-Pult laden', async () => {
