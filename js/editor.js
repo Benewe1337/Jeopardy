@@ -315,6 +315,7 @@
       });
       grid.appendChild(col);
     });
+    if (J.fjEditor) J.fjEditor.render(set, persist);
   }
 
   titleEl.addEventListener('input', () => { set.title = titleEl.value; persist(); });

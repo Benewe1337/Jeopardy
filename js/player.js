@@ -114,6 +114,7 @@
     renderJokers(clueKey);
     renderSpecial(clueKey);
     syncTimer(cur && cur.timer);
+    if (J.fjPlayer) J.fjPlayer.render(s);
   }
 
   // ---------- Wer bin ich? ----------
@@ -798,6 +799,7 @@
         hints[msg.key] = msg.text;
         renderJokers(lastJokerKey);
       }
+      else if (msg.type === 'fjMine' && J.fjPlayer) J.fjPlayer.onMine(msg);
       else if (msg.type === 'react') J.showReaction(msg.emoji, msg.name);
       else if (msg.type === 'taken' && msg.playerId === me) {
         forget(msg.reason === 'full' ? 'Dieses Team ist schon voll. Wähle ein anderes.' : 'Dieser Name ist schon auf einem anderen Gerät vergeben.');
@@ -860,6 +862,9 @@
     if (!J.audioUnlocked()) { J.unlockAudio(); setTimeout(renderSound, 50); }
   });
   renderSound();
+
+  // Schnittstelle für Final Jeopardy (js/finale-player.js)
+  J.playerApi = { me: () => me, myPlayer, conn: () => conn, last: () => last, isTeam: isTeamMode, myName: () => myName };
 
   window.addEventListener('beforeunload', () => { if (peer) peer.destroy(); });
   J.net.ready.then(startPeer);

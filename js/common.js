@@ -40,6 +40,8 @@
           })),
         })),
       })),
+      // Final Jeopardy (optional): erst mit Frage und Antwort spielbar
+      final: { category: '', q: '', a: '', note: '' },
     };
   }
 
@@ -74,6 +76,9 @@
           if (CLUE_KINDS.includes(cl.kind)) cat.clues[row].kind = cl.kind;
         }
       }
+    }
+    if (raw.final && typeof raw.final === 'object') {
+      for (const k of Object.keys(base.final)) if (typeof raw.final[k] === 'string') base.final[k] = raw.final[k];
     }
     return base;
   }
@@ -448,6 +453,7 @@
       mode: s.mode === 'team' ? 'team' : 'single',
       teamSize: clampTeamSize(s.teamSize),
       finished: !!s.finished,
+      fj: s.fj && typeof s.fj === 'object' ? s.fj : null,
       history: Array.isArray(s.history) ? s.history : [],
     };
   }
@@ -571,6 +577,8 @@
       stats: state.stats || {},
       personStats: state.mode === 'team' ? state.personStats || {} : {},
       current,
+      // Final Jeopardy (js/finale.js): ohne Einsätze, Antworten und Lösung vor dem Aufdecken
+      final: window.J && window.J.fj && !state.finished ? window.J.fj.publicFinal(set, state) : null,
     };
   }
 

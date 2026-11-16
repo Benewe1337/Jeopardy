@@ -18,6 +18,7 @@
       personStats: JSON.parse(JSON.stringify(state.personStats || {})),
       mode: state.mode,
       teamSize: state.teamSize,
+      fj: state.fj ? JSON.parse(JSON.stringify(state.fj)) : null,
     };
   }
 
@@ -43,6 +44,8 @@
     if (snap.mode) state.mode = snap.mode;
     if (snap.teamSize) state.teamSize = snap.teamSize;
     pendingBuzz = null;
+    state.fj = snap.fj || null;
+    if (state.fj) state.fj.timer = null;
     if (state.current) state.current.timer = null; // alte Timer nicht wiederbeleben
     commit();
   }
@@ -69,6 +72,7 @@
     $('r0').className = state.round === 0 ? 'primary' : '';
     $('r1').className = state.round === 1 ? 'primary' : '';
     $('undo').disabled = state.history.length === 0;
+    if (J.fjHost) J.fjHost.render();
   }
 
   function renderBoard() {
@@ -101,7 +105,7 @@
   }
 
   function onCell(cat, row) {
-    if (state.intro) return;
+    if (state.intro || state.fj) return;
     const r = state.round;
     if (state.used[r][cat][row]) {
       if (confirm('Dieses Feld wieder freigeben?')) {
@@ -715,6 +719,7 @@
       state.current = null;
       state.stats = {};
       state.personStats = {};
+      state.fj = null;
     });
   }
   $('modeSingle').addEventListener('click', () => setMode('single'));
@@ -811,6 +816,7 @@
       state.finished = false;
       state.stats = {};
       state.personStats = {};
+      state.fj = null;
     });
   });
   $('newCode').addEventListener('click', () => {
@@ -948,6 +954,7 @@
       renderPlayers();
       broadcast(); // Belegung an alle schicken
       if (ok) sendHint(ok); // nach Verbindungsabbruch den Tipp erneut schicken
+      if (ok && J.fjHost) J.fjHost.sendMine(ok);
     } else if (msg.type === 'buzz') {
       handleBuzz(conn, msg);
     } else if (msg.type === 'joker') {
@@ -956,6 +963,8 @@
       handleSubmission(conn, msg);
     } else if (msg.type === 'react') {
       handleReaction(conn, msg);
+    } else if ((msg.type === 'fjwager' || msg.type === 'fjanswer') && J.fjHost) {
+      J.fjHost.onData(conn, msg);
     }
   }
 
@@ -1138,6 +1147,9 @@
 
   window.addEventListener('beforeunload', () => { if (peer) peer.destroy(); });
 
+  // Schnittstelle für Final Jeopardy (js/finale-host.js)
+  J.hostApi = { state: () => state, set: () => set, mutate, commit, sound, conns, isTeam, nameOf };
+  if (J.fjHost) J.fjHost.init();
   render();
   J.net.ready.then(startPeer);
 })();
