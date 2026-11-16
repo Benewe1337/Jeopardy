@@ -383,7 +383,8 @@ test('normalizeState behält FJ-, DD-, Statistik-Felder (Laden und Fortsetzen)',
     const s = plain(J.normalizeState(raw, opts));
     assert.deepEqual(s.fj, raw.fj);
     assert.deepEqual(s.ddAuto, raw.ddAuto);
-    assert.equal(s.ddRandom, true);
+    assert.deepEqual(s.options, { ddRandom: true }, 'altes state.ddRandom wandert in state.options');
+    assert.equal(s.ddRandom, undefined);
     assert.equal(s.current.dd.phase, 'wager');
     assert.deepEqual(s.stats, raw.stats);
     assert.deepEqual(s.personStats, raw.personStats);
@@ -399,10 +400,10 @@ test('normalizeState behält FJ-, DD-, Statistik-Felder (Laden und Fortsetzen)',
 test('normalizeSet behält Daily-Double-Felder, Medien und Final-Jeopardy-Daten (Spielstand-Datei)', () => {
   const set = J.defaultSet();
   set.rounds[0].categories[0].clues[1] = { q: 'q', a: 'a', note: '', img: '', dd: true, media: 'https://example.com/x.mp3', mediaType: 'audio' };
-  set.ddRandom = true;
+  set.options = { ddRandom: true };
   const n = plain(J.normalizeSet(JSON.parse(JSON.stringify(set))));
   assert.equal(n.rounds[0].categories[0].clues[1].dd, true);
   assert.equal(n.rounds[0].categories[0].clues[1].media, 'https://example.com/x.mp3');
   assert.equal(n.rounds[0].categories[0].clues[1].mediaType, 'audio');
-  assert.equal(n.ddRandom, true);
+  assert.equal(n.options.ddRandom, true);
 });

@@ -12,6 +12,9 @@
     return !!(f && typeof f.q === 'string' && f.q.trim() && typeof f.a === 'string' && f.a.trim());
   }
 
+  // Final Jeopardy spielbar? Option „final“ (Host vor Set vor Standard) UND Frage + Antwort im Set
+  const finalOn = (set, state) => J.opt(set, state, 'final') && hasFinal(set);
+
   // Höchster erlaubter Einsatz: der eigene Punktestand; wer 0 oder weniger hat, spielt mit, darf aber nur 0 setzen
   const maxWager = (score) => Math.max(0, Math.floor(Number(score) || 0));
 
@@ -107,7 +110,7 @@
   }
 
   J.fj = {
-    TIMER_MS, MAX_ANSWER_LEN, hasFinal, maxWager, parseWager, validWager, cleanAnswer, revealOrder, scoreDelta,
+    TIMER_MS, MAX_ANSWER_LEN, hasFinal, finalOn, maxWager, parseWager, validWager, cleanAnswer, revealOrder, scoreDelta,
     newFinal, submitWager, submitAnswer, fillMissingWagers, effectiveWager, nextToReveal, allDone, publicFinal,
   };
 })();

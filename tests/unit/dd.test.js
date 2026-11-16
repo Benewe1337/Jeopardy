@@ -159,7 +159,7 @@ test('Zufall: Host-Einstellung geht vor dem Set; Felder bleiben pro Runde stabil
   assert.equal(J.dd.isDd(g.set, g.st, 0, 1, 3), false);
   assert.equal(J.dd.ensureRandom(g.set, g.st, 0), false, 'ohne Zufall wird nichts gelost');
   // Set-Voreinstellung
-  g.set.ddRandom = true;
+  g.set.options = { ddRandom: true };
   assert.equal(J.dd.randomOn(g.set, g.st), true);
   assert.equal(J.dd.ensureRandom(g.set, g.st, 0), true);
   const first = plain(J.dd.cells(g.set, g.st, 0));
@@ -171,7 +171,7 @@ test('Zufall: Host-Einstellung geht vor dem Set; Felder bleiben pro Runde stabil
   assert.equal(J.dd.ensureRandom(g.set, g.st, 1), true);
   assert.equal(J.dd.cells(g.set, g.st, 1).length, 2);
   // Host schaltet aus
-  g.st.ddRandom = false;
+  g.st.options = { ddRandom: false };
   assert.equal(J.dd.randomOn(g.set, g.st), false);
   assert.deepEqual(plain(J.dd.cells(g.set, g.st, 0)), [{ cat: 1, row: 2 }]);
 });
@@ -179,13 +179,17 @@ test('Zufall: Host-Einstellung geht vor dem Set; Felder bleiben pro Runde stabil
 test('Set und Spielstand: dd-Markierung und Zufallsoption bleiben erhalten, Altbestand lädt weiter', () => {
   const s = J.defaultSet();
   s.rounds[1].categories[4].clues[3].dd = true;
-  s.ddRandom = true;
+  s.options = { ddRandom: true };
   const n = J.normalizeSet(plain(s));
   assert.equal(n.rounds[1].categories[4].clues[3].dd, true);
   assert.equal(n.rounds[1].categories[4].clues[2].dd, undefined);
-  assert.equal(n.ddRandom, true);
+  assert.equal(n.options.ddRandom, true);
+  // Altbestand: set.ddRandom wandert in set.options
+  const old = J.normalizeSet({ ddRandom: true });
+  assert.deepEqual(plain(old.options), { ddRandom: true });
+  assert.equal(old.ddRandom, undefined);
   const junk = J.normalizeSet({ ddRandom: 'ja', rounds: [{ categories: [{ name: 'X', clues: [{ q: 'q', dd: 'ja' }] }] }] });
-  assert.equal(junk.ddRandom, undefined);
+  assert.equal(junk.options, undefined);
   assert.equal(junk.rounds[0].categories[0].clues[0].dd, undefined);
   const copy = J.copyCategories(J.defaultSet(), [{ set: s, round: 1, cat: 4 }], 0, 0);
   assert.equal(copy.rounds[0].categories[0].clues[3].dd, true, 'Kopieren behält die Markierung');

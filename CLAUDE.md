@@ -38,6 +38,7 @@ Board 2 (200–1000) ist insgesamt schwerer als Board 1.
 - Tests: `npm test` (Unit + Browser über WebRTC), `npm run test:e2e:relay` (Browser über das Relay). CI führt beides aus.
 - Bei jeder Änderung an `js/` die `APP_VERSION` in `js/common.js` hochzählen: Handys mit altem Stand laden sich dann im Spiel selbst neu.
 - Quizfragen nie ins Repo committen (öffentlich, Spieler könnten Antworten finden). **Einzige Ausnahme:** der öffentliche Fragenkatalog in `catalog/` (Entscheidung von Ben, 2026-11-16) – diese Fragen sind bewusst öffentlich und werden mit Pages ausgeliefert. Eigene/private Spiel-Sets kommen weiterhin nie ins Repo; wer den Katalog im Spiel nutzt, kennt die Antworten.
+- Spielregeln/Optionen: eine Liste `J.OPTION_DEFS` in `js/common.js` (Schlüssel, Label, Standard, Gruppe, `requires`); Editor (Voreinstellung `set.options`) und Host-Pult (Überschreibung `state.options`, nach dem ersten Feld gesperrt) rendern daraus über `js/options-ui.js`. Lesen immer über `J.opt(set, state, key)`. Neue Option = Eintrag in der Liste + Prüfung an der Stelle in der Logik (Host erzwingt, nicht nur Oberfläche) + Tests an/aus; was Spieler/TV wissen müssen, kommt in `publicState().opts`.
 - Katalog-Dateien: eine JSON pro Kategorie (`name`, `level` runde1/runde2, `tags`, 5 `clues`) plus `catalog/index.json`; `tests/unit/catalog.test.js` prüft Form, Quellenangabe und doppelte Antworten.
 
 ## Geplant: Fragenpool mit Würfel-Modus (noch nicht gebaut)

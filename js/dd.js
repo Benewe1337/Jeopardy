@@ -23,10 +23,10 @@
   // Punkteänderung: richtig +Einsatz, falsch −Einsatz (voll, nicht halbiert)
   const scoreDelta = (wager, verdict) => (verdict === 'right' ? wager : -wager);
 
-  // Gilt „zufällig“? Eine Host-Einstellung (state.ddRandom) geht vor der Voreinstellung im Set.
-  function randomOn(set, state) {
-    return state && typeof state.ddRandom === 'boolean' ? state.ddRandom : !!(set && set.ddRandom);
-  }
+  // Gilt „zufällig“? Option ddRandom (Host vor Set vor Standard); ohne Daily Double nie
+  const randomOn = (set, state) => J.opt(set, state, 'ddRandom');
+  // Daily Double überhaupt an? (Option dd) Aus = markierte/zufällige Felder sind normale Felder
+  const enabled = (set, state) => J.opt(set, state, 'dd');
 
   // Zufällige Felder: 1 in Runde 1, 2 in Runde 2, nie in der ersten Reihe, verschiedene Kategorien
   function pickRandom(round, rnd = Math.random) {
@@ -42,6 +42,7 @@
 
   // Alle Daily-Double-Felder einer Runde: [{cat, row}]
   function cells(set, state, round) {
+    if (!enabled(set, state)) return [];
     if (randomOn(set, state)) return (state.ddAuto && state.ddAuto[round]) || [];
     const out = [];
     set.rounds[round].categories.forEach((cat, c) => cat.clues.forEach((cl, row) => {
@@ -75,5 +76,5 @@
     };
   }
 
-  J.dd = { MIN_WAGER, roundTop, maxWager, validWager, scoreDelta, randomOn, pickRandom, cells, isDd, ensureRandom, newDd, publicDd };
+  J.dd = { MIN_WAGER, roundTop, maxWager, validWager, scoreDelta, enabled, randomOn, pickRandom, cells, isDd, ensureRandom, newDd, publicDd };
 })();

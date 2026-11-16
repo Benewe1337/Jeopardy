@@ -1646,10 +1646,16 @@ body.readonly .host-page { filter: grayscale(.6); }
 .ed-dd { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 13px; cursor: pointer; white-space: nowrap; }
 .ed-dd input { width: auto; margin: 0; padding: 0; }
 .ed-clue.is-dd { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-.ed-dd-random { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-weight: 600; cursor: pointer; }
-.ed-dd-random input { width: auto; margin: 0; }
-.dd-random { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 13px; cursor: pointer; }
-.dd-random input { width: auto; margin: 0; }
+/* Spielregeln (Editor + Host) */
+.ed-options { margin-top: 12px; padding: 10px 14px; border: 1px solid var(--line-strong); border-radius: 12px; }
+.ed-options summary { cursor: pointer; font-weight: 700; }
+.opt-group h4 { margin: 12px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.opt-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 13px; cursor: pointer; flex-direction: row; color: inherit; }
+.opt-row input[type=checkbox] { width: auto; margin: 0; }
+.opt-row select { width: auto; font-size: 13px; }
+.opt-row.opt-off { opacity: .55; cursor: default; }
+.opt-hint { margin: 2px 0 0 24px; font-size: 11px; color: var(--muted); }
+.opt-locked { margin: 8px 0; }
 .host .cell.val.dd:not(.used)::after { content: "⭐"; position: absolute; top: 2px; right: 4px; font-size: 12px; }
 .host .cell.val.dd { position: relative; }
 .dd-panel { display: block; margin-top: 12px; }

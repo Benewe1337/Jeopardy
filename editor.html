@@ -110,13 +110,16 @@
     </div>
     <p class="hint">Oberes Feld: Frage bzw. Hinweis, den die Spieler sehen. Gelbes Feld: Antwort (sehen die Spieler nach dem Aufdecken). Host-Notiz: z. B. „auch richtig: …“ – sieht nur du. Alles wird automatisch gespeichert.</p>
 
-    <label class="ed-dd-random" id="ddRandomRow" title="Beim Rundenstart werden die Felder gelost (nie in der ersten Reihe) und ersetzen die markierten.">
-      <input type="checkbox" id="ddRandomBox"> 🎲 Daily Doubles zufällig (1 in Runde 1, 2 in Runde 2 – statt der markierten Felder)
-    </label>
+    <details class="ed-options" id="optionsBox">
+      <summary>⚙️ Spielregeln (Voreinstellung für dieses Set)</summary>
+      <p class="hint">Gespeichert im Set. Der Host kann sie vor dem Spiel im Host-Pult für das einzelne Spiel ändern.</p>
+      <div id="optionsList"></div>
+    </details>
     <div class="ed-grid" id="grid" style="margin-top:16px"></div>
     <section class="ed-final" id="fjEditor"></section>
   </main>
   <script src="js/common.js"></script>
+  <script src="js/options-ui.js"></script>
   <script src="js/sets.js"></script>
   <script src="js/finale-editor.js"></script>
   <script src="js/media.js"></script>

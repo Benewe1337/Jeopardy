@@ -225,9 +225,10 @@ test('Zufällige Daily Doubles: 1 in Runde 1, 2 in Runde 2, nie erste Reihe; Hos
   await useSet(host, 's.rounds[0].categories[5].clues[4].dd = true;'); // markiert, wird vom Zufall ersetzt
   const anna = await joinPlayer(env, code, { pick: 'Anna' });
   await host.waitForFunction(() => document.querySelectorAll('#players .device').length === 1);
-  assert.equal(await host.isChecked('#ddRandom'), false);
+  await host.evaluate(() => { document.getElementById('optionsBox').open = true; });
+  assert.equal(await host.isChecked('#opt-ddRandom'), false);
   assert.equal(await host.locator('.cell.val.dd').count(), 1);
-  await host.check('#ddRandom');
+  await host.check('#opt-ddRandom');
   await host.waitForFunction(() => J.loadState().ddAuto[0] && J.loadState().ddAuto[0].length === 1);
   const picked = await host.evaluate(() => J.loadState().ddAuto[0][0]);
   assert.ok(picked.row >= 1, 'nie erste Reihe');
@@ -254,7 +255,7 @@ test('Zufällige Daily Doubles: 1 in Runde 1, 2 in Runde 2, nie erste Reihe; Hos
   assert.equal(await host.locator('.cell.val.dd').count(), 2);
   // Ausschalten: wieder nur die im Set markierten (Runde 1)
   await host.click('#r0');
-  await host.uncheck('#ddRandom');
+  await host.uncheck('#opt-ddRandom');
   await host.waitForFunction(() => document.querySelectorAll('.cell.val.dd').length === 1);
   assert.equal(await host.locator('.cell.val').nth(cellIdx(5, 4)).getAttribute('class').then((c) => c.includes('dd')), true);
   assert.deepEqual(env.errors, []);
@@ -265,20 +266,21 @@ test('Editor: Daily Double markieren und Zufallsoption speichern', async () => {
   await page.goto(env.base + '/editor.html');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
-  await page.waitForSelector('#ddRandomBox');
+  await page.evaluate(() => { document.getElementById('optionsBox').open = true; });
+  await page.waitForSelector('#opt-ddRandom');
   await page.locator('.ed-clue .ed-dd input').nth(6).check();
-  await page.check('#ddRandomBox');
+  await page.check('#opt-ddRandom');
   let saved = await page.evaluate(() => JSON.parse(localStorage.getItem('jeopardy.set')));
-  assert.equal(saved.ddRandom, true);
+  assert.equal(saved.options.ddRandom, true);
   assert.equal(saved.rounds[0].categories[1].clues[1].dd, true, 'Spalte 2, Reihe 2');
   await page.click('.tabs button[data-round="1"]');
   await page.click('.tabs button[data-round="0"]');
   assert.equal(await page.locator('.ed-clue .ed-dd input').nth(6).isChecked(), true);
-  assert.equal(await page.isChecked('#ddRandomBox'), true);
+  assert.equal(await page.isChecked('#opt-ddRandom'), true);
   await page.locator('.ed-clue .ed-dd input').nth(6).uncheck();
-  await page.uncheck('#ddRandomBox');
+  await page.uncheck('#opt-ddRandom');
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem('jeopardy.set')));
-  assert.equal(saved.ddRandom, undefined);
+  assert.equal(saved.options, undefined);
   assert.equal(saved.rounds[0].categories[1].clues[1].dd, undefined);
   assert.deepEqual(env.errors, []);
 });
