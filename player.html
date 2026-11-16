@@ -11,6 +11,7 @@
     <button class="small me-btn" id="me" hidden></button>
   </div>
   <div class="topright">
+    <button class="small sound-btn" id="qrBtn" hidden title="QR-Code zum Beitreten ein-/ausblenden">QR</button>
     <button class="small sound-btn" id="fullBtn" hidden title="Vollbild">⛶</button>
     <button class="small sound-btn" id="sound">🔇 Ton aktivieren</button>
     <div class="status bad" id="status">verbinde…</div>
@@ -20,6 +21,14 @@
     <div class="waiting" id="waiting">Verbinde mit dem Spiel…</div>
     <div class="turn-banner" id="turnBanner" hidden></div>
     <div class="board" id="board" hidden></div>
+    <div class="invite-tv" id="invite" hidden>
+      <div class="invite-card">
+        <h2>Jetzt mitspielen</h2>
+        <div class="invite-qr" id="inviteQr"></div>
+        <div class="invite-code">Raum <b id="inviteCode"></b></div>
+        <div class="invite-link" id="inviteLink"></div>
+      </div>
+    </div>
     <div class="scores" id="scores"></div>
   </div>
 
@@ -75,6 +84,8 @@
   </div>
 
   <script src="vendor/peerjs.min.js"></script>
+  <script src="vendor/qrcode.js"></script>
+  <script src="js/qr.js"></script>
   <script src="js/common.js"></script>
   <script src="js/net.js"></script>
   <script src="js/player.js"></script>

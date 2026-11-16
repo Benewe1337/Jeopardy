@@ -500,6 +500,7 @@
     const team = isTeamMode();
     document.body.classList.toggle('tv', me === 'tv');
     $('fullBtn').hidden = me !== 'tv';
+    renderInvite();
     // Noch nicht gewählt oder Spieler/Team wurde gelöscht → Auswahl zeigen, Board bleibt verdeckt.
     // Ohne Spieler/Teams gibt es nur TV/Zuschauen; die Liste füllt sich live, sobald der Host welche anlegt.
     if (!valid) {
@@ -548,6 +549,31 @@
       : team ? `Du: ${myName || 'Spieler'} · ${myPlayer().name}`
       : 'Du: ' + myPlayer().name;
   }
+
+  // TV: QR-Code zum Beitreten, solange noch nichts gespielt wurde; per QR-Taste ein-/ausblendbar
+  const joinUrl = J.joinUrl(location.href, room, turn);
+  $('inviteQr').innerHTML = JQR.svg(joinUrl);
+  $('inviteCode').textContent = room;
+  $('inviteLink').textContent = joinUrl;
+  let inviteDone = false;
+  let inviteManual = null; // null = automatisch, sonst true/false von Hand
+  function gameStarted(s) {
+    return s.round > 0 || !!s.current || !!s.finished || s.used.some((col) => col.some(Boolean));
+  }
+  function renderInvite() {
+    const tv = me === 'tv' && last;
+    if (last && (last.intro || gameStarted(last))) inviteDone = true; // nach Intro/erstem Feld nie wieder von allein
+    const auto = tv && !inviteDone;
+    const show = tv && (inviteManual === null ? auto : inviteManual);
+    $('invite').hidden = !show;
+    $('qrBtn').hidden = !tv;
+    $('qrBtn').classList.toggle('on', !!show);
+  }
+  $('qrBtn').addEventListener('click', () => {
+    inviteManual = $('invite').hidden;
+    renderInvite();
+  });
+  $('invite').addEventListener('click', () => { inviteManual = false; renderInvite(); });
 
   function goFullscreen() {
     const el = document.documentElement;
