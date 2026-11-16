@@ -74,9 +74,11 @@
             }
           }
           if (CLUE_KINDS.includes(cl.kind)) cat.clues[row].kind = cl.kind;
+          if (cl.dd === true) cat.clues[row].dd = true;
         }
       }
     }
+    if (raw.ddRandom === true) base.ddRandom = true;
     if (raw.final && typeof raw.final === 'object') {
       for (const k of Object.keys(base.final)) if (typeof raw.final[k] === 'string') base.final[k] = raw.final[k];
     }
@@ -131,6 +133,12 @@
     if (!p) return 'Nur für Spieler';
     if ((p.usedJokers || []).includes(kind)) return 'Schon benutzt';
     if (!cur) return 'Erst wenn eine Frage offen ist';
+    // Daily Double: der Einsatz steht schon (kein Doppelt oder nichts), Weitergeben gibt es nicht
+    if (cur.dd) {
+      if (kind === 'double') return 'Nicht beim Daily Double – du hast schon einen Einsatz';
+      if (kind === 'pass') return 'Nicht beim Daily Double – nur du antwortest';
+      if (cur.dd.phase !== 'play') return 'Erst nach dem Einsatz';
+    }
     if (cur.kind && cur.kind !== 'normal') return 'Nicht bei dieser Frageart';
     const judged = cur.judged || {};
     const buzz = cur.buzz || {};
@@ -158,6 +166,7 @@
     const judged = cur.judged || {};
     const buzz = cur.buzz || {};
     const jk = cur.jokers || {};
+    if (cur.dd) return cur.dd.phase === 'play' && cur.dd.pid && !judged[cur.dd.pid] ? cur.dd.pid : null;
     if (Object.values(judged).includes('right')) return null;
     if (buzz.winner && !judged[buzz.winner]) return buzz.winner;
     if (buzz.open || buzz.arming) return null;
@@ -454,6 +463,8 @@
       teamSize: clampTeamSize(s.teamSize),
       finished: !!s.finished,
       fj: s.fj && typeof s.fj === 'object' ? s.fj : null,
+      ddAuto: Array.isArray(s.ddAuto) ? s.ddAuto : [],
+      ddRandom: typeof s.ddRandom === 'boolean' ? s.ddRandom : null,
       history: Array.isArray(s.history) ? s.history : [],
     };
   }
@@ -525,19 +536,22 @@
     let current = null;
     if (cur) {
       const clue = set.rounds[cur.round].categories[cur.cat].clues[cur.row];
+      // Daily Double: bis der Einsatz steht, bekommen die Spieler weder Frage noch Bild noch Antworten
+      const ddHide = !!cur.dd && cur.dd.phase !== 'play';
       current = {
         cat: cur.cat,
         row: cur.row,
         category: set.rounds[cur.round].categories[cur.cat].name,
-        value: pointsFor(cur.round, cur.row),
-        q: clue.q,
+        value: cur.dd && cur.dd.wager != null ? cur.dd.wager : pointsFor(cur.round, cur.row),
+        dd: cur.dd ? window.J.dd.publicDd(cur, state) : null,
+        q: ddHide ? '' : clue.q,
         // Verpixelte Bilder: echtes Bild erst nach der letzten Stufe; das Mini-Bild setzt der Host ein
-        img: pixelLevel(clue, cur) == null ? safeImg(clue.img) || null : null,
-        pixel: pixelLevel(clue, cur) == null ? null : { step: pixelLevel(clue, cur), steps: imgSteps(clue).length, mode: imgMode(clue) },
-        kind: CLUE_KINDS.includes(clue.kind) ? clue.kind : 'normal',
-        est: clue.kind === 'estimate' ? publicEstimate(cur) : null,
-        ord: clue.kind === 'order' ? publicOrder(clue, cur) : null,
-        mc: clue.kind === 'choice' ? publicChoice(clue, cur) : null,
+        img: ddHide || pixelLevel(clue, cur) != null ? null : safeImg(clue.img) || null,
+        pixel: ddHide || pixelLevel(clue, cur) == null ? null : { step: pixelLevel(clue, cur), steps: imgSteps(clue).length, mode: imgMode(clue) },
+        kind: !ddHide && CLUE_KINDS.includes(clue.kind) ? clue.kind : 'normal',
+        est: !ddHide && clue.kind === 'estimate' ? publicEstimate(cur) : null,
+        ord: !ddHide && clue.kind === 'order' ? publicOrder(clue, cur) : null,
+        mc: !ddHide && clue.kind === 'choice' ? publicChoice(clue, cur) : null,
         a: cur.revealed ? clue.a : null,
         revealed: !!cur.revealed,
         // Joker: wer was gesetzt hat (der Tipp-Inhalt geht nur privat an den Spieler)

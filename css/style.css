@@ -1626,3 +1626,32 @@ body.tv .buzz-area, body.tv .react-bar { display: none !important; }
 .ed-final-grid textarea { min-height: 64px; resize: vertical; }
 .ed-final-q, .ed-final-note { grid-column: 1 / -1; }
 @media (max-width: 700px) { .ed-final-grid { grid-template-columns: 1fr; } }
+
+/* ---------- Daily Double ---------- */
+.ed-dd { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.ed-dd input { width: auto; margin: 0; padding: 0; }
+.ed-clue.is-dd { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.ed-dd-random { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-weight: 600; cursor: pointer; }
+.ed-dd-random input { width: auto; margin: 0; }
+.dd-random { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 13px; cursor: pointer; }
+.dd-random input { width: auto; margin: 0; }
+.host .cell.val.dd:not(.used)::after { content: "⭐"; position: absolute; top: 2px; right: 4px; font-size: 12px; }
+.host .cell.val.dd { position: relative; }
+.dd-panel { display: block; margin-top: 12px; }
+.dd-panel[hidden] { display: none; }
+.dd-host-form { display: flex; gap: 8px; margin: 8px 0; }
+.dd-host-form input { max-width: 160px; }
+.dd-host-form input.invalid { border-color: var(--red); }
+.dd-picks { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; font-size: 13px; }
+.dd-overlay { z-index: 13; justify-content: center; padding-bottom: 14vh; }
+.dd-title {
+  font-family: var(--display); font-weight: 900; font-size: clamp(44px, 11vw, 190px); line-height: .95; letter-spacing: 2px;
+  color: var(--accent); text-transform: uppercase; text-shadow: 0 0 40px color-mix(in srgb, var(--accent) 55%, transparent);
+  animation: ddSlam 1s cubic-bezier(.2, .9, .3, 1.25) both, ddPulse 1.6s 1s ease-in-out infinite;
+}
+.dd-sub { margin-top: 3vh; font-weight: 800; font-size: clamp(18px, 2.6vw, 40px); }
+@keyframes ddSlam { from { opacity: 0; transform: scale(3) rotate(-8deg); } to { opacity: 1; transform: none; } }
+@keyframes ddPulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.35); } }
+@media (prefers-reduced-motion: reduce) { .dd-title { animation: none !important; } }
+.clue-meta .dd-badge { color: var(--accent); font-weight: 800; }
+.joker-reason { margin-top: 6px; font-size: 13px; opacity: .8; }

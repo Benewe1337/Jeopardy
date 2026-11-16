@@ -40,6 +40,7 @@
         </div>
         <div class="buzz-status" id="buzzStatus" hidden></div>
         <div class="joker-status" id="jokerStatus" hidden></div>
+        <div class="special dd-panel" id="ddPanel" hidden></div>
         <div class="judge" id="judge"></div>
         <div class="special" id="special" hidden></div>
         <div class="clue-actions">
@@ -96,6 +97,9 @@
           <button class="small ghost" id="resetGame">Spielstand zurücksetzen</button>
           <button class="small ghost" id="newCode">Neuer Raumcode</button>
         </div>
+        <label class="dd-random" title="Beim Rundenstart werden die Felder gelost (nie in der ersten Reihe). Ersetzt im Set markierte Felder.">
+          <input type="checkbox" id="ddRandom"> 🎲 Zufällige Daily Doubles (1 in Runde 1, 2 in Runde 2)
+        </label>
         <p class="hint" id="fjHint" hidden></p>
         <p class="hint">Änderungen im Editor-Tab werden sofort übernommen.</p>
         <details class="turn-box" id="turnBox">
@@ -139,6 +143,7 @@
   <script src="js/common.js"></script>
   <script src="js/net.js"></script>
   <script src="js/finale.js"></script>
+  <script src="js/dd.js"></script>
   <script src="js/finale-host.js"></script>
   <script src="js/host.js"></script>
 </body>

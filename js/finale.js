@@ -16,10 +16,13 @@
   const maxWager = (score) => Math.max(0, Math.floor(Number(score) || 0));
 
   // Gültiger Einsatz (ganze Zahl 0..Punktestand) → Zahl, sonst null
-  function validWager(v, score) {
+  function parseWager(v) {
     if (typeof v === 'string' && v.trim() !== '') v = Number(v);
-    if (typeof v !== 'number' || !Number.isInteger(v)) return null;
-    return v >= 0 && v <= maxWager(score) ? v : null;
+    return typeof v === 'number' && Number.isInteger(v) ? v : null;
+  }
+  function validWager(v, score) {
+    const n = parseWager(v);
+    return n != null && n >= 0 && n <= maxWager(score) ? n : null;
   }
 
   function cleanAnswer(v) {
@@ -104,7 +107,7 @@
   }
 
   J.fj = {
-    TIMER_MS, MAX_ANSWER_LEN, hasFinal, maxWager, validWager, cleanAnswer, revealOrder, scoreDelta,
+    TIMER_MS, MAX_ANSWER_LEN, hasFinal, maxWager, parseWager, validWager, cleanAnswer, revealOrder, scoreDelta,
     newFinal, submitWager, submitAnswer, fillMissingWagers, effectiveWager, nextToReveal, allDone, publicFinal,
   };
 })();
