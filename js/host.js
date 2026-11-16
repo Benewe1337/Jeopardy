@@ -18,6 +18,7 @@
       personStats: JSON.parse(JSON.stringify(state.personStats || {})),
       mode: state.mode,
       teamSize: state.teamSize,
+      fj: state.fj ? JSON.parse(JSON.stringify(state.fj)) : null,
     };
   }
 
@@ -43,8 +44,11 @@
     if (snap.mode) state.mode = snap.mode;
     if (snap.teamSize) state.teamSize = snap.teamSize;
     pendingBuzz = null;
+    state.fj = snap.fj || null;
+    if (state.fj) state.fj.timer = null;
     if (state.current) state.current.timer = null; // alte Timer nicht wiederbeleben
     commit();
+    armDdReveal();
   }
 
   function commit() {
@@ -71,6 +75,8 @@
     $('r0').className = state.round === 0 ? 'primary' : '';
     $('r1').className = state.round === 1 ? 'primary' : '';
     $('undo').disabled = state.history.length === 0;
+    if (J.fjHost) J.fjHost.render();
+    $('ddRandom').checked = J.dd.randomOn(set, state);
   }
 
   function renderBoard() {
@@ -92,9 +98,10 @@
         const used = state.used[r][c][row];
         const cur = state.current;
         const active = cur && cur.round === r && cur.cat === c && cur.row === row;
-        el.className = 'cell val' + (used ? ' used' : '') + (active ? ' active' : '');
+        const dd = !used && J.dd.isDd(set, state, r, c, row);
+        el.className = 'cell val' + (used ? ' used' : '') + (active ? ' active' : '') + (dd ? ' dd' : '');
         el.textContent = J.pointsFor(r, row);
-        el.title = cats[c].clues[row].q;
+        el.title = (dd ? '⭐ Daily Double – ' : '') + cats[c].clues[row].q;
         el.style.setProperty('--i', row * J.CATS + c);
         el.addEventListener('click', () => onCell(c, row));
         board.appendChild(el);
@@ -103,7 +110,7 @@
   }
 
   function onCell(cat, row) {
-    if (state.intro) return;
+    if (state.intro || state.fj) return;
     const r = state.round;
     if (state.used[r][cat][row]) {
       if (confirm('Dieses Feld wieder freigeben?')) {
@@ -115,7 +122,9 @@
     }
     // Verpixelte Bilder: Buzzer-Rennen – der Buzzer öffnet sofort für alle, wer das Bild
     // zuerst erkennt, darf antworten (sonst könnte der Spieler am Zug einfach abwarten)
-    const race = J.pixelLevel(set.rounds[r].categories[cat].clues[row], { revealed: false }) != null && state.players.length > 0;
+    // Daily Double: nur mit Spielern (sonst gibt es niemanden, der setzt) – dann kein Buzzer-Rennen
+    const isDd = state.players.length > 0 && J.dd.isDd(set, state, r, cat, row);
+    const race = !isDd && J.pixelLevel(set.rounds[r].categories[cat].clues[row], { revealed: false }) != null && state.players.length > 0;
     const clue = set.rounds[r].categories[cat].clues[row];
     const kind = J.CLUE_KINDS.includes(clue.kind) ? clue.kind : 'normal';
     mutate(`Frage ${J.pointsFor(r, row)} „${set.rounds[r].categories[cat].name}“ geöffnet`, () => {
@@ -127,7 +136,9 @@
       if (kind === 'estimate') state.current.est = { guesses: {} };
       if (kind === 'order') state.current.ord = { perm: J.shufflePerm(J.orderItems(clue.a).length), answers: {} };
       if (kind === 'choice') state.current.mc = { perm: J.shufflePerm(J.orderItems(clue.a).length), answers: {} };
+      if (isDd) state.current.dd = J.dd.newDd(state.turn);
     });
+    if (isDd) { sound('fanfare'); armDdReveal(); return; }
     sound('open');
     if (race) armBuzz();
   }
@@ -183,6 +194,8 @@
     const cur = state.current;
     const pid = conn.playerId;
     if (!cur || cur.revealed || !pid || !state.players.some((p) => p.id === pid)) return;
+    // Daily Double: erst nach dem Einsatz, und nur der Spieler/das Team, das spielt
+    if (cur.dd && (cur.dd.phase !== 'play' || cur.dd.pid !== pid)) return;
     const clue = set.rounds[cur.round].categories[cur.cat].clues[cur.row];
     if (msg.type === 'estimate' && cur.kind === 'estimate') {
       const v = J.parseNumber(msg.value);
@@ -214,6 +227,7 @@
   function resolveSpecial() {
     const cur = state.current;
     if (!cur || cur.revealed) return;
+    if (cur.dd) { resolveDdSpecial(); return; }
     const clue = set.rounds[cur.round].categories[cur.cat].clues[cur.row];
     const value = J.pointsFor(cur.round, cur.row);
     let winners = [];
@@ -259,16 +273,17 @@
     const box = $('special');
     const special = J.isSpecialKind(cur.kind);
     box.hidden = !special;
-    $('judge').hidden = special;
-    $('buzzBtn').hidden = special;
+    // Daily Double: der Host wertet immer von Hand (✓/✗); MC und Reihenfolge lassen sich zusätzlich auflösen
+    $('judge').hidden = special && !cur.dd;
+    $('buzzBtn').hidden = special || !!cur.dd;
     $('reveal').hidden = special;
-    $('resolveBtn').hidden = !special || cur.revealed;
+    $('resolveBtn').hidden = !special || cur.revealed || (!!cur.dd && (cur.kind === 'estimate' || cur.dd.phase !== 'play'));
     if (!special) return;
-    const value = J.pointsFor(cur.round, cur.row);
+    const value = cur.dd ? cur.dd.wager || 0 : J.pointsFor(cur.round, cur.row);
     const answers = cur.kind === 'estimate' ? cur.est.guesses : cur.kind === 'choice' ? cur.mc.answers : cur.ord.answers;
     const items = cur.kind !== 'estimate' ? J.orderItems(clue.a) : null;
     const n = Object.keys(answers).length;
-    const rows = state.players.map((p) => {
+    const rows = state.players.filter((p) => !cur.dd || p.id === cur.dd.pid).map((p) => {
       const has = p.id in answers;
       let detail = has ? '✓ abgegeben' : '… wartet';
       if (has && cur.kind === 'estimate') detail = String(answers[p.id]).replace('.', ',');
@@ -276,18 +291,161 @@
       if (has && cur.kind === 'order') detail = (J.orderCorrect(answers[p.id]) ? '✓ ' : '✗ ') + answers[p.id].map((i) => items[i]).join(' → ');
       const won = cur.judged[p.id] === 'right';
       const lost = cur.judged[p.id] === 'wrong';
-      const pen = J.penaltyFor(cur.round, cur.row);
+      const pen = cur.dd ? value : J.penaltyFor(cur.round, cur.row);
       return `<div class="srow${won ? ' won' : ''}${lost ? ' lost' : ''}"><span class="name">${J.escapeHtml(p.name)}</span><span>${J.escapeHtml(detail)}${won ? ` · +${value}` : ''}${lost ? ` · −${pen}` : ''}</span></div>`;
     }).join('');
-    const total = state.players.length;
+    const total = cur.dd ? 1 : state.players.length;
     const head = cur.kind === 'estimate' ? `🔢 Schätzfrage – ${n}/${total} getippt`
       : cur.kind === 'choice' ? `🅰️ Multiple Choice – ${n}/${total} gewählt` : `↕️ Reihenfolge – ${n}/${total} abgegeben`;
-    const pen = J.penaltyFor(cur.round, cur.row);
-    const rule = cur.kind === 'estimate' ? `Wer am nächsten dran ist, bekommt +${value} (kein Abzug)`
+    const pen = cur.dd ? value : J.penaltyFor(cur.round, cur.row);
+    const rule = cur.dd ? `Daily Double: richtig +${value}, falsch −${value} (voller Einsatz). Du kannst auch von Hand mit ✓/✗ werten` : cur.kind === 'estimate' ? `Wer am nächsten dran ist, bekommt +${value} (kein Abzug)`
       : cur.kind === 'choice' ? `Richtig: +${value}, falsch: −${pen}, keine Abgabe: 0`
         : `Komplett richtige Reihenfolge: +${value}, sonst −${pen}, keine Abgabe: 0`;
     box.innerHTML = `<div class="special-head">${head}</div>${rows}` +
       (cur.revealed ? '' : `<div class="hint">${rule}. Abgaben lassen sich bis zum Auflösen ändern.</div>`);
+  }
+
+  // ---------- Daily Double ----------
+  // Ablauf: Animation für alle (reveal) → wager (wer am Zug ist setzt) → play (Frage, nur dieser Spieler).
+  // Zufällige Felder stehen in state.ddAuto und werden beim Rundenstart festgelegt.
+  const ddRevealMs = () => window.JEOP_DD_MS || 3200;
+  let ddTimer = null;
+  function armDdReveal() {
+    clearTimeout(ddTimer);
+    const cur = state.current;
+    if (!cur || !cur.dd || cur.dd.phase !== 'reveal') return;
+    ddTimer = setTimeout(() => {
+      if (state.current !== cur || !cur.dd || cur.dd.phase !== 'reveal') return;
+      cur.dd.phase = 'wager';
+      commit(); // wie das Runden-Intro ohne Undo-Eintrag
+    }, ddRevealMs());
+  }
+
+  function ensureRandomDd() {
+    if (J.dd.ensureRandom(set, state, state.round)) J.saveState(state);
+  }
+
+  // Einsatz des Spielers/Teams, das das Daily Double spielt (vom Handy oder vom Host eingetippt)
+  function setDdWager(value) {
+    const cur = state.current;
+    if (!cur || !cur.dd || cur.dd.phase !== 'wager' || !cur.dd.pid) return false;
+    const p = state.players.find((x) => x.id === cur.dd.pid);
+    const w = p ? J.dd.validWager(value, p.score, cur.round) : null;
+    if (w == null) return false;
+    mutate(`⭐ Daily Double: ${p.name} setzt ${w}`, () => { cur.dd.wager = w; cur.dd.phase = 'play'; });
+    sound('open');
+    return true;
+  }
+
+  function pickDdPlayer(pid) {
+    const cur = state.current;
+    const p = state.players.find((x) => x.id === pid);
+    if (!cur || !cur.dd || cur.dd.phase === 'play' || !p) return;
+    mutate(`⭐ Daily Double: ${p.name} spielt`, () => {
+      cur.dd.pid = pid;
+      state.turn = pid;
+    });
+  }
+
+  // ✓/✗ für den Daily-Double-Spieler: +Einsatz bzw. −Einsatz (voll), danach ist die Frage vorbei – kein Klauen
+  function judgeDd(verdict) {
+    const cur = state.current;
+    const dd = cur && cur.dd;
+    const p = dd && state.players.find((x) => x.id === dd.pid);
+    if (!p || dd.phase !== 'play' || cur.revealed || (cur.judged || {})[p.id]) return;
+    const delta = J.dd.scoreDelta(dd.wager, verdict);
+    const clue = set.rounds[cur.round].categories[cur.cat].clues[cur.row];
+    mutate(`⭐ Daily Double: ${p.name} ${verdict === 'right' ? 'richtig' : 'falsch'} (${delta > 0 ? '+' : '−'}${dd.wager})`, () => {
+      p.score += delta;
+      cur.judged[p.id] = verdict;
+      stat(p.id)[verdict === 'right' ? 'right' : 'wrong']++;
+      if (cur.kind === 'estimate') {
+        cur.est.answer = J.parseNumber(clue.a);
+        cur.est.winners = verdict === 'right' ? [p.id] : [];
+      }
+      cur.buzz = closedBuzz();
+      cur.timer = null;
+      cur.revealed = true;
+      state.used[cur.round][cur.cat][cur.row] = true;
+    });
+    sound(verdict === 'right' ? 'right' : 'wrong');
+  }
+
+  // Multiple Choice / Reihenfolge: aus der Abgabe des Spielers werten; ohne Abgabe geht nur ✓/✗ von Hand
+  function resolveDdSpecial() {
+    const cur = state.current;
+    if (!cur || !cur.dd || cur.dd.phase !== 'play' || cur.kind === 'estimate') return;
+    const ans = (cur.kind === 'choice' ? cur.mc.answers : cur.ord.answers)[cur.dd.pid];
+    if (ans == null) return;
+    judgeDd((cur.kind === 'choice' ? ans === 0 : J.orderCorrect(ans)) ? 'right' : 'wrong');
+  }
+
+  function renderDdJudge(cur, judge) {
+    const dd = cur.dd;
+    const p = state.players.find((x) => x.id === dd.pid);
+    if (!p || dd.phase !== 'play') return;
+    const verdict = (cur.judged || {})[p.id];
+    const row = document.createElement('div');
+    row.className = 'jrow' + (verdict ? ' ' + verdict : '');
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = '⭐ ' + p.name + ((cur.jokers && cur.jokers.hint || []).includes(p.id) ? ' 💡' : '');
+    row.append(name);
+    if (verdict) {
+      const tag = document.createElement('span');
+      tag.className = 'verdict';
+      tag.textContent = verdict === 'right' ? `✓ +${dd.wager}` : `✗ −${dd.wager}`;
+      row.append(tag);
+    } else {
+      const ok = document.createElement('button');
+      ok.className = 'green small';
+      ok.id = 'ddRight';
+      ok.textContent = `✓ +${dd.wager}`;
+      ok.addEventListener('click', () => judgeDd('right'));
+      const bad = document.createElement('button');
+      bad.className = 'red small';
+      bad.id = 'ddWrong';
+      bad.textContent = `✗ −${dd.wager}`;
+      bad.addEventListener('click', () => judgeDd('wrong'));
+      row.append(ok, bad);
+    }
+    judge.appendChild(row);
+  }
+
+  // Steuerung vor der Frage: Animation überspringen, Spieler wählen, Einsatz für ihn eintippen
+  function renderDdPanel(cur) {
+    const el = $('ddPanel');
+    const dd = cur.dd;
+    el.hidden = !dd || dd.phase === 'play';
+    if (el.hidden) { el.__key = null; return; }
+    const p = state.players.find((x) => x.id === dd.pid);
+    const max = p ? J.dd.maxWager(p.score, cur.round) : J.dd.roundTop(cur.round);
+    const key = [dd.phase, dd.pid, max].join(':');
+    if (el.__key === key) return;
+    el.__key = key;
+    const picks = state.players.map((x) => `<button class="small${x.id === dd.pid ? ' primary' : ''}" data-pick="${J.escapeHtml(x.id)}">${J.escapeHtml(x.name)}</button>`).join(' ');
+    if (dd.phase === 'reveal') {
+      el.innerHTML = `<div class="special-head">⭐ Daily Double!</div><div class="hint">Die Ansage läuft auf allen Bildschirmen.</div>
+        <button class="small" id="ddSkip">Weiter zum Einsatz ⏭</button>`;
+    } else {
+      el.innerHTML = `<div class="special-head">⭐ Daily Double – ${p ? J.escapeHtml(p.name) + ' setzt' : 'wer spielt?'}</div>` +
+        (p
+          ? `<div class="hint">Einsatz ${J.dd.MIN_WAGER}–${max}. Das Handy von ${J.escapeHtml(p.name)} fragt danach; du kannst ihn auch selbst eintippen:</div>
+            <form class="dd-host-form" id="ddHostForm" novalidate><input id="ddHostWager" type="number" min="${J.dd.MIN_WAGER}" max="${max}" step="1" placeholder="${J.dd.MIN_WAGER}–${max}" autocomplete="off"><button class="primary small" type="submit">Einsatz setzen</button></form>`
+          : '<div class="hint">Niemand ist am Zug – wähle, wer das Daily Double spielt.</div>') +
+        `<div class="dd-picks">${p ? 'Anderer Spieler: ' : ''}${picks}</div>`;
+    }
+    const skip = el.querySelector('#ddSkip');
+    if (skip) skip.addEventListener('click', () => { clearTimeout(ddTimer); cur.dd.phase = 'wager'; commit(); });
+    el.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', () => pickDdPlayer(b.dataset.pick)));
+    const form = el.querySelector('#ddHostForm');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = form.querySelector('input');
+        if (!setDdWager(input.value)) input.classList.add('invalid');
+      });
+    }
   }
 
   // ---------- Joker ----------
@@ -416,7 +574,7 @@
     // Geklaut: Hat schon jemand falsch geantwortet, gibt es für die richtige Antwort nur die Hälfte
     const stolen = Object.values(judged).includes('wrong');
     const gain = stolen ? J.stealFor(cur.round, cur.row) : value;
-    $('clueMeta').textContent = `${cat.name} – ${value}` + (cur.revealed ? ' · Antwort ist für Spieler sichtbar' : '');
+    $('clueMeta').textContent = (cur.dd ? '⭐ Daily Double · ' : '') + `${cat.name} – ${cur.dd && cur.dd.wager != null ? 'Einsatz ' + cur.dd.wager : value}` + (cur.revealed ? ' · Antwort ist für Spieler sichtbar' : '');
     $('clueQ').textContent = clue.q;
     // Verpixelt: Host sieht dasselbe wie die Spieler (die Antwort steht ja darunter)
     const lvl = J.pixelLevel(clue, cur);
@@ -438,7 +596,8 @@
     $('clueA').textContent = clue.a;
     $('clueNote').textContent = clue.note || '';
     $('clueNote').hidden = !clue.note;
-    $('reveal').disabled = cur.revealed;
+    $('reveal').disabled = cur.revealed || !!(cur.dd && cur.dd.phase !== 'play');
+    renderDdPanel(cur);
     renderSpecial(cur, clue);
 
     // Buzzer- und Timer-Steuerung
@@ -465,6 +624,7 @@
       status.textContent = '';
     }
     if (pass && !buzz.winner && !solved) status.textContent = `👉 ${pass.by || nameOf(pass.from)} gibt weiter: ${nameOf(pass.to)} muss antworten`;
+    if (cur.dd) status.textContent = cur.dd.phase === 'play' ? `⭐ Daily Double: nur ${nameOf(cur.dd.pid)} antwortet – kein Buzzer, kein Klauen` : '';
     status.hidden = !status.textContent;
     const jparts = [];
     (jk.double || []).forEach((id) => jparts.push(`🎲 ${nameOf(id)}: Doppelt oder nichts`));
@@ -480,6 +640,7 @@
 
     const judge = $('judge');
     judge.innerHTML = '';
+    if (cur.dd) { renderDdJudge(cur, judge); return; }
     if (!state.players.length) {
       judge.innerHTML = `<span class="hint">Lege rechts ${isTeam() ? 'Teams' : 'Spieler'} an, um Punkte zu vergeben.</span>`;
     }
@@ -717,6 +878,7 @@
       state.current = null;
       state.stats = {};
       state.personStats = {};
+      state.fj = null;
     });
   }
   $('modeSingle').addEventListener('click', () => setMode('single'));
@@ -751,6 +913,7 @@
     if (state.round === r) return;
     stopIntro(false);
     mutate('Runde ' + (r + 1), () => { state.round = r; state.current = null; });
+    ensureRandomDd();
     startIntro();
   }
   $('r0').addEventListener('click', () => switchRound(0));
@@ -789,6 +952,12 @@
     dealTimer = setTimeout(() => $('board').classList.remove('deal'), 2000);
     commit();
   }
+  $('ddRandom').addEventListener('change', () => {
+    state.ddRandom = $('ddRandom').checked;
+    state.ddAuto = []; // beim Umschalten neu auslosen
+    ensureRandomDd();
+    commit();
+  });
   $('introBtn').addEventListener('click', startIntro);
   $('introSkip').addEventListener('click', () => stopIntro(true));
   $('undo').addEventListener('click', undo);
@@ -813,7 +982,10 @@
       state.finished = false;
       state.stats = {};
       state.personStats = {};
+      state.fj = null;
+      state.ddAuto = []; // zufällige Daily Doubles werden neu ausgelost
     });
+    ensureRandomDd();
   });
   // ---------- Spielstand als Datei ----------
   const fileMsg = (text, bad) => { $('fileMsg').textContent = text; $('fileMsg').classList.toggle('error', !!bad); };
@@ -1002,14 +1174,20 @@
       renderPlayers();
       broadcast(); // Belegung an alle schicken
       if (ok) sendHint(ok); // nach Verbindungsabbruch den Tipp erneut schicken
+      if (ok && J.fjHost) J.fjHost.sendMine(ok);
     } else if (msg.type === 'buzz') {
       handleBuzz(conn, msg);
     } else if (msg.type === 'joker') {
       handleJoker(conn, msg);
     } else if (msg.type === 'estimate' || msg.type === 'order' || msg.type === 'choice') {
       handleSubmission(conn, msg);
+    } else if (msg.type === 'ddwager') {
+      const cur = state.current;
+      if (cur && cur.dd && conn.playerId && conn.playerId === cur.dd.pid) setDdWager(msg.value);
     } else if (msg.type === 'react') {
       handleReaction(conn, msg);
+    } else if ((msg.type === 'fjwager' || msg.type === 'fjanswer') && J.fjHost) {
+      J.fjHost.onData(conn, msg);
     }
   }
 
@@ -1195,6 +1373,11 @@
 
   window.addEventListener('beforeunload', () => { if (peer) peer.destroy(); });
 
+  // Schnittstelle für Final Jeopardy (js/finale-host.js)
+  J.hostApi = { state: () => state, set: () => set, mutate, commit, sound, conns, isTeam, nameOf };
+  if (J.fjHost) J.fjHost.init();
+  ensureRandomDd();
+  armDdReveal();
   render();
   // Vor dem Verbinden klären, ob ein gesichertes Spiel zu diesem Raum gehört (nur Relay)
   J.net.ready
