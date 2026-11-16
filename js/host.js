@@ -858,10 +858,13 @@
   const code = J.roomCode();
   // Verbindungshilfe: TURN-Zugang wandert im #-Teil des Links mit (wird nicht an Server übertragen)
   const turn = J.loadTurn();
-  const joinUrl = new URL('player.html?room=' + code, location.href).href + (turn ? '#t=' + J.encodeTurn(turn) : '');
+  const joinUrl = J.joinUrl(location.href, code, turn);
   const peerOptions = () => ({ config: J.iceConfig(turn, window.JEOP_FORCE_RELAY) });
   $('code').textContent = code;
   $('link').textContent = joinUrl;
+  // QR-Code zum Beitrittslink (offline erzeugt); Klick vergrößert ihn für Handy-Kameras
+  $('qr').innerHTML = JQR.svg(joinUrl);
+  $('qr').addEventListener('click', () => $('qr').classList.toggle('big'));
   $('copy').addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(joinUrl);

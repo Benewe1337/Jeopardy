@@ -74,3 +74,24 @@ test('next-Parameter wird im HTML maskiert', async () => {
   const html = await res.text();
   assert.ok(!html.includes('<script>alert(1)'));
 });
+
+test('QR-Beitrittslink: nach dem Login landet der Spieler wieder im Raum', async () => {
+  const link = '/player.html?room=ABC123';
+  const res = await gate(req(link), PW);
+  assert.equal(res.status, 200);
+  assert.match(await res.text(), /name="next" value="\/player\.html\?room=ABC123"/);
+
+  const body = new URLSearchParams({ password: PW, next: link });
+  const login = await gate(req('/__login', { method: 'POST', body }), PW);
+  assert.equal(login.status, 303);
+  assert.equal(login.headers.get('location'), link);
+  assert.ok(!login.headers.get('location').includes(PW), 'Passwort taucht nie im Link auf');
+});
+
+test('Login-Weiterleitung lässt keine fremden Ziele zu', async () => {
+  for (const next of ['//evil.example/player.html?room=A', 'https://evil.example/', '/\\evil.example']) {
+    const body = new URLSearchParams({ password: PW, next });
+    const login = await gate(req('/__login', { method: 'POST', body }), PW);
+    assert.equal(login.headers.get('location'), '/');
+  }
+});

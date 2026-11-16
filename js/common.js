@@ -324,6 +324,11 @@
     if (forceRelay) config.iceTransportPolicy = 'relay';
     return config;
   }
+  // Beitrittslink (Link, QR-Code): immer nur Raumcode (+ TURN-Zugang im #-Teil). Nie ein Passwort –
+  // Host- und Seitenpasswort bleiben beim Host bzw. in Cookie/Header.
+  function joinUrl(base, room, turn) {
+    return new URL('player.html?room=' + encodeURIComponent(room), base).href + (turn ? '#t=' + encodeTurn(turn) : '');
+  }
   // Für den Beitrittslink: kompakt, URL-sicher, Unicode-fest
   function encodeTurn(t) {
     t = parseTurn(t);
@@ -991,7 +996,7 @@
     renderIntro, introCellClass,
     nextTurn, turnAfterRemoval, LOCK_MS, MIN_REACTION_MS, isEarly, pickBuzzWinner,
     clampTeamSize, teamIsFull, teamColor, cleanName,
-    DEFAULT_ICE, parseTurn, iceConfig, encodeTurn, decodeTurn, loadTurn, saveTurn, scoreDelta,
+    DEFAULT_ICE, parseTurn, iceConfig, encodeTurn, decodeTurn, joinUrl, loadTurn, saveTurn, scoreDelta,
     fmtMs, awards, REACTIONS, showReaction, BUZZ_WINDOW_MS: 400,
     // Übers Relay kommen Buzzes ungleichmäßiger an (HTTP statt Direktverbindung) → länger sammeln
     BUZZ_WINDOW_RELAY_MS: 900,
