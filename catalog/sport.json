@@ -15,25 +15,25 @@
       "q": "In welcher Sportart gibt es den Slam Dunk?",
       "a": "Basketball",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Basketball"
+      "note": "Dunk = \"Stopfen\". Quelle: https://de.wikipedia.org/wiki/Basketball"
     },
     {
       "q": "In welcher Sportart gibt es ein 'Hole in One'?",
       "a": "Golf",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Golf"
+      "note": "Auch \"Ass\". Quelle: https://en.wikipedia.org/wiki/Hole_in_one"
     },
     {
       "q": "Welcher spanische Tennisspieler gewann die French Open 14-mal?",
       "a": "Rafael Nadal",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Rafael_Nadal"
+      "note": "Stand 2024: 14 Titel (2005-2022). Quelle: https://de.wikipedia.org/wiki/Rafael_Nadal"
     },
     {
-      "q": "Wie heißt die Länge eines Marathons in Kilometern, auf drei Nachkommastellen genau?",
+      "q": "Wie viele Kilometer lang ist ein Marathon, auf drei Nachkommastellen genau?",
       "a": "42,195",
       "img": "",
-      "note": "'42,195 km' Quelle: https://de.wikipedia.org/wiki/Marathonlauf"
+      "note": "\"42,195 km\", seit 1921 offiziell. Quelle: https://de.wikipedia.org/wiki/Marathonlauf"
     }
   ]
 }

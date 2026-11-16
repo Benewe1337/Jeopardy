@@ -22,19 +22,19 @@
       "q": "Welches ist das schnellste Landtier der Welt?",
       "a": "Gepard",
       "img": "",
-      "note": "Sprintet bis etwa 100 km/h. Quelle: https://de.wikipedia.org/wiki/Gepard"
+      "note": "Über 100 km/h nur über kurze Strecken. Quelle: https://de.wikipedia.org/wiki/Gepard"
     },
     {
       "q": "Welcher winzige Vogel kann als einer der wenigen rückwärts fliegen?",
       "a": "Kolibri",
       "img": "",
-      "note": "Gilt als einziger Vogelfamilie mit echtem Rückwärtsflug. Quelle: https://de.wikipedia.org/wiki/Kolibris"
+      "note": "Können auch seitwärts fliegen. Quelle: https://de.wikipedia.org/wiki/Kolibris"
     },
     {
       "q": "Welches Landtier trägt seine Jungen mit rund 22 Monaten am längsten aus?",
       "a": "Elefant",
       "img": "",
-      "note": "Afrikanischer oder Asiatischer Elefant gelten beide. Quelle: https://de.wikipedia.org/wiki/Elefanten"
+      "note": "Tragzeit fast zwei Jahre (ca. 22 Monate). Afrikanischer oder Asiatischer Elefant gelten beide. Quelle: https://de.wikipedia.org/wiki/Elefanten"
     }
   ]
 }

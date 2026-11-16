@@ -10,35 +10,35 @@
       "q": "Wie hoch ist das Hochhaus Burj Khalifa in Metern?",
       "a": "828",
       "img": "",
-      "note": "Schätzfrage. Quelle: https://de.wikipedia.org/wiki/Burj_Khalifa",
+      "note": "Schätzfrage; 828 m (ohne Antenne, 829,8 m mit). Quelle: https://de.wikipedia.org/wiki/Burj_Khalifa",
       "kind": "estimate"
     },
     {
-      "q": "Sortiere die Planeten nach Abstand zur Sonne (nah → fern): Merkur, Erde, Mars, Jupiter",
-      "a": "Merkur | Erde | Mars | Jupiter",
+      "q": "Sortiere die Planeten nach Abstand zur Sonne (nah → fern): Saturn, Mars, Neptun, Venus, Uranus",
+      "a": "Venus | Mars | Saturn | Uranus | Neptun",
       "img": "",
       "note": "Reihenfolge-Frage. Quelle: https://de.wikipedia.org/wiki/Sonnensystem",
       "kind": "order"
     },
     {
-      "q": "Wie viele Millionen Einwohner hat Deutschland ungefähr?",
-      "a": "84",
+      "q": "Wie viele Millionen Einwohner hat Deutschland ungefähr (Stand 2026)?",
+      "a": "83.3",
       "img": "",
-      "note": "Schätzfrage; Stand 2023 etwa 84,7 Mio. Quelle: https://de.wikipedia.org/wiki/Deutschland",
+      "note": "Schätzfrage; 83,3 Mio. am 30.6.2026 laut Wikipedia-Infobox (Bevölkerungsstand). Quelle: https://de.wikipedia.org/wiki/Deutschland",
       "kind": "estimate"
     },
     {
       "q": "Sortiere nach Erscheinungsjahr (älteste zuerst): Super Mario Bros., Minecraft, Fortnite, The Legend of Zelda",
       "a": "Super Mario Bros. | The Legend of Zelda | Minecraft | Fortnite",
       "img": "",
-      "note": "1985, 1986, 2011, 2017. Quelle: https://de.wikipedia.org/wiki/Super_Mario_Bros.",
+      "note": "Japan: 13.9.1985, 21.2.1986, Minecraft 1.0 am 18.11.2011 (Alpha 2009), Fortnite 25.7.2017. Quelle: https://de.wikipedia.org/wiki/Minecraft",
       "kind": "order"
     },
     {
       "q": "Wie hoch ist der Mount Everest in Metern (amtlich seit 2020)?",
       "a": "8849",
       "img": "",
-      "note": "Schätzfrage; 8848,86 m. Quelle: https://de.wikipedia.org/wiki/Mount_Everest",
+      "note": "Schätzfrage; 8848,86 m (gemeinsame Messung China/Nepal 2020). Quelle: https://de.wikipedia.org/wiki/Mount_Everest",
       "kind": "estimate"
     }
   ]

@@ -18,22 +18,22 @@
       "note": "Quelle: https://de.wikipedia.org/wiki/Sternennacht"
     },
     {
-      "q": "Welcher Maler gilt als Mitbegründer des Kubismus?",
-      "a": "Pablo Picasso",
-      "img": "",
-      "note": "Auch Georges Braque. Quelle: https://de.wikipedia.org/wiki/Kubismus"
-    },
-    {
       "q": "Wer malte 'Der Schrei'?",
       "a": "Edvard Munch",
       "img": "",
       "note": "Quelle: https://de.wikipedia.org/wiki/Der_Schrei"
     },
     {
-      "q": "Wer malte 'Der Kuss' von 1908?",
+      "q": "Wer malte das Gemälde 'Der Kuss' mit viel Blattgold?",
       "a": "Gustav Klimt",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Der_Kuss_(Klimt)"
+      "note": "Entstanden 1908/09. Quelle: https://de.wikipedia.org/wiki/Der_Kuss_(Klimt)"
+    },
+    {
+      "q": "Welcher spanische Maler schuf 1656 das Hofbild 'Las Meninas'?",
+      "a": "Diego Velázquez",
+      "img": "",
+      "note": "Voller Name Diego Rodríguez de Silva y Velázquez. Quelle: https://de.wikipedia.org/wiki/Las_Meninas"
     }
   ]
 }

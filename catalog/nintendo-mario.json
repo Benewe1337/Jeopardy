@@ -10,13 +10,13 @@
       "q": "Welcher Klempner trägt eine rote Mütze mit M?",
       "a": "Mario",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Mario_(Spielfigur)"
+      "note": "Quelle: https://de.wikipedia.org/wiki/Mario_(Computerspielfigur)"
     },
     {
       "q": "Wie heißt Marios grün gekleideter Bruder?",
       "a": "Luigi",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Luigi"
+      "note": "Quelle: https://de.wikipedia.org/wiki/Mario_(Computerspielfigur)"
     },
     {
       "q": "Wie heißt die Prinzessin, die Mario immer wieder retten muss?",
@@ -25,16 +25,16 @@
       "note": "Quelle: https://de.wikipedia.org/wiki/Prinzessin_Peach"
     },
     {
-      "q": "Wie heißt Marios grüner Dinosaurier-Freund?",
-      "a": "Yoshi",
-      "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Yoshi"
-    },
-    {
       "q": "Welcher japanische Spieleentwickler hat Mario erfunden?",
       "a": "Shigeru Miyamoto",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Shigeru_Miyamoto"
+      "note": "Erfinder von Mario, Zelda und Donkey Kong. Quelle: https://de.wikipedia.org/wiki/Shigeru_Miyamoto"
+    },
+    {
+      "q": "Unter welchem Namen trat Mario 1981 im Arcade-Spiel Donkey Kong zum ersten Mal auf?",
+      "a": "Jumpman",
+      "img": "",
+      "note": "Damals noch Zimmermann, erst ab Mario Bros. (1983) Klempner. Quelle: https://de.wikipedia.org/wiki/Mario_(Computerspielfigur)"
     }
   ]
 }

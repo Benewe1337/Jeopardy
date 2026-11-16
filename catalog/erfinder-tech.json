@@ -10,31 +10,31 @@
       "q": "Welche japanische Firma stellt die PlayStation her?",
       "a": "Sony",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/PlayStation"
-    },
-    {
-      "q": "Wer erfand in Europa den Buchdruck mit beweglichen Lettern?",
-      "a": "Johannes Gutenberg",
-      "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Johannes_Gutenberg"
+      "note": "Sony Computer Entertainment. Quelle: https://de.wikipedia.org/wiki/PlayStation"
     },
     {
       "q": "Welche Firma gründete Steve Jobs mit Steve Wozniak?",
       "a": "Apple",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Apple"
+      "note": "Ronald Wayne war dritter Mitgründer, 1976. Quelle: https://de.wikipedia.org/wiki/Apple"
+    },
+    {
+      "q": "Wer erfand in Europa den Buchdruck mit beweglichen Lettern?",
+      "a": "Johannes Gutenberg",
+      "img": "",
+      "note": "Erfinder des europäischen Buchdrucks mit beweglichen Metalllettern, um 1450. Quelle: https://de.wikipedia.org/wiki/Johannes_Gutenberg"
     },
     {
       "q": "Wer erfand das Dynamit?",
       "a": "Alfred Nobel",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Alfred_Nobel"
+      "note": "Dynamit 1867 patentiert. Quelle: https://de.wikipedia.org/wiki/Alfred_Nobel"
     },
     {
       "q": "Wer entdeckte 1928 das Penicillin?",
       "a": "Alexander Fleming",
       "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Alexander_Fleming"
+      "note": "Entdeckung am 28.9.1928 (nicht Erfindung). Quelle: https://de.wikipedia.org/wiki/Alexander_Fleming"
     }
   ]
 }

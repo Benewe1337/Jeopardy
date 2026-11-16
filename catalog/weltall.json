@@ -22,19 +22,19 @@
       "q": "Wer betrat 1969 als erster Mensch den Mond?",
       "a": "Neil Armstrong",
       "img": "",
-      "note": "Apollo 11. Quelle: https://de.wikipedia.org/wiki/Neil_Armstrong"
-    },
-    {
-      "q": "Wie heißt die Galaxie, in der unsere Sonne liegt?",
-      "a": "Milchstraße",
-      "img": "",
-      "note": "Quelle: https://de.wikipedia.org/wiki/Milchstraße"
+      "note": "Apollo 11, 21. Juli 1969 (UTC). Quelle: https://de.wikipedia.org/wiki/Neil_Armstrong"
     },
     {
       "q": "Wie heißt der größte Mond des Saturn?",
       "a": "Titan",
       "img": "",
       "note": "Quelle: https://de.wikipedia.org/wiki/Titan_(Mond)"
+    },
+    {
+      "q": "Wie heißt der höchste Vulkan des Sonnensystems, der auf dem Mars liegt?",
+      "a": "Olympus Mons",
+      "img": "",
+      "note": "Ca. 21 km hoch. Quelle: https://en.wikipedia.org/wiki/Olympus_Mons"
     }
   ]
 }
