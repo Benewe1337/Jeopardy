@@ -250,12 +250,12 @@ test('Penalty auch für Multiple Choice: Spieler sehen den Abzug', async () => {
   await host.waitForFunction(() => document.querySelectorAll('#players .device').length === 1);
   await setOpt(host, 'penalty', 'full');
   await host.locator('.cell.val').nth(0).click();
-  await anna.waitForFunction(() => document.querySelector('.special-status').textContent.includes('−100'));
+  await anna.waitForFunction(() => (document.querySelector('.special-status')?.textContent || '').includes('−100'));
   await host.click('#cancel');
   await setOpt(host, 'penalty', 'none');
   await host.locator('.cell.val').nth(0).click();
   await anna.waitForSelector('.special-status');
-  await anna.waitForFunction(() => !document.querySelector('.special-status').hidden && document.querySelector('.special-status').textContent.includes('gewählt'));
+  await anna.waitForFunction(() => (document.querySelector('.special-status')?.textContent || '').includes('gewählt'));
   assert.ok(!(await anna.textContent('.special-status')).includes('Falsch kostet'));
   assert.deepEqual(env.errors, []);
 });
@@ -307,7 +307,7 @@ test('Editor: Regeln im Set speichern, ausgeschaltete Funktionen verschwinden', 
   await openOpts(page);
   await page.waitForSelector('#opt-penalty');
   const saved = () => page.evaluate(() => JSON.parse(localStorage.getItem('jeopardy.set')));
-  assert.equal((await saved()).options, undefined, 'Standard: nichts gespeichert');
+  assert.equal(((await saved()) || {}).options, undefined, 'Standard: nichts gespeichert');
   assert.equal(await page.isVisible('#fjEditor'), true);
   assert.ok(await page.locator('.ed-clue .ed-dd').first().isVisible());
   await setOpt(page, 'penalty', 'full');
