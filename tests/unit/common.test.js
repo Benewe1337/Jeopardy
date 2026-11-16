@@ -311,3 +311,57 @@ test('normalizeSet behält HTML in Texten als Text und verwirft unsichere Bild-U
   assert.equal(s.rounds[0].categories[0].clues[0].q, '<img src=x onerror=1>');
   assert.equal(s.rounds[0].categories[0].clues[0].img, '');
 });
+
+// ---------- normalizeState (Laden und Fortsetzen) ----------
+test('normalizeState repariert kaputte oder fehlende Felder', () => {
+  const d = plain(J.defaultState());
+  assert.deepEqual(plain(J.normalizeState(null)), d);
+  assert.deepEqual(plain(J.normalizeState('quatsch')), d);
+  const s = plain(J.normalizeState({
+    round: 7, used: [[[1, 0, 'x']]], players: [{ id: 5, name: 'A', score: '30' }, { name: 'ohne id' }, null, { id: 'b', score: 'abc' }],
+    turn: 4, stats: [], mode: 'foo', teamSize: 99, finished: 1, history: [1, { label: 'x' }],
+  }));
+  assert.equal(s.round, 0);
+  assert.deepEqual(s.used, d.used, 'used muss 2×6×5 sein, sonst leer');
+  assert.deepEqual(s.players.map((p) => [p.id, p.name, p.score]), [['5', 'A', 30], ['b', '', 0]]);
+  assert.equal(s.turn, null);
+  assert.deepEqual(s.stats, {});
+  assert.equal(s.mode, 'single');
+  assert.equal(s.finished, true);
+  assert.deepEqual(s.history, [{ label: 'x' }]);
+});
+
+test('normalizeState behält gültige Daten, used wird auf Booleans normalisiert', () => {
+  const used = plain(J.defaultState().used);
+  used[1][2][3] = true;
+  const s = plain(J.normalizeState({ round: 1, used, players: [{ id: 'a', name: 'Anna', score: 200, usedJokers: ['x'] }], turn: 'a', mode: 'team', teamSize: 2 }));
+  assert.equal(s.round, 1);
+  assert.equal(s.used[1][2][3], true);
+  assert.deepEqual(s.players[0].usedJokers, ['x'], 'weitere Spielerfelder bleiben');
+  assert.equal(s.mode, 'team');
+});
+
+test('normalizeState beim Fortsetzen: Timer weg, Buzzer geschlossen, Gewinner bleibt', () => {
+  const raw = {
+    players: [{ id: 'a', name: 'A', score: 0 }],
+    current: { round: 0, cat: 0, row: 0, timer: { endsAt: 1, total: 5 }, buzz: { open: true, winner: null, arming: true } },
+    history: [{ label: 'h', current: { timer: { endsAt: 1 }, buzz: { open: true, winner: 'a' } } }],
+  };
+  const r = plain(J.normalizeState(raw, { resume: true }));
+  assert.equal(r.current.timer, null);
+  assert.deepEqual(r.current.buzz, { open: false, winner: null });
+  assert.deepEqual(r.history[0].current.buzz, { open: false, winner: 'a' });
+  assert.equal(plain(J.normalizeState(raw)).current.timer.total, 5, 'normales Laden lässt den Timer unberührt');
+});
+
+test('Wiederhergestellter State verrät Spielern keine Schätzantwort', () => {
+  const set = J.defaultSet();
+  set.rounds[0].categories[0].clues[0] = { q: 'Wie hoch?', a: 'GEHEIM-42', kind: 'estimate', img: '', note: '' };
+  const st = J.normalizeState({
+    players: [{ id: 'a', name: 'A', score: 0 }],
+    current: { round: 0, cat: 0, row: 0, kind: 'estimate', revealed: false, est: { answer: 42, guesses: { a: 40 } }, buzz: { open: false, winner: null } },
+  }, { resume: true });
+  const pub = JSON.stringify(J.publicState(set, st));
+  assert.ok(!pub.includes('GEHEIM-42'));
+  assert.ok(!/"answer":\s*42/.test(pub));
+});

@@ -63,6 +63,7 @@ async function startEnv(init = {}) {
   const peerPort = await freePort();
   let relay = null;
   let sets = null;
+  let game = null;
   if (TRANSPORT === 'relay') {
     const { handleRelay } = await import('../../lib/relay-core.mjs');
     const { memoryStore } = await import('../../lib/relay-stores.mjs');
@@ -70,7 +71,8 @@ async function startEnv(init = {}) {
     relay = async (req, res) => {
       const u = new URL(req.url, 'http://x');
       const rawBody = req.method === 'POST' ? await readBody(req) : '';
-      const { status, json } = await handleRelay({ method: req.method, query: u.searchParams, rawBody }, store);
+      const headers = { get: (k) => req.headers[k.toLowerCase()] ?? null };
+      const { status, json } = await handleRelay({ method: req.method, query: u.searchParams, headers, rawBody }, store, HOST_PASSWORD);
       res.writeHead(status, { 'content-type': 'application/json' });
       res.end(JSON.stringify(json));
     };
@@ -85,11 +87,23 @@ async function startEnv(init = {}) {
       res.writeHead(status, { 'content-type': 'application/json' });
       res.end(JSON.stringify(json));
     };
+    // Spielstand-Speicher wie auf Vercel (nur im Speicher, nie eine echte Datenbank)
+    const { handleGame, memoryGameStore } = await import('../../lib/game-core.mjs');
+    const gameStore = memoryGameStore();
+    game = async (req, res) => {
+      const u = new URL(req.url, 'http://x');
+      const rawBody = req.method === 'POST' ? await readBody(req) : '';
+      const headers = { get: (k) => req.headers[k.toLowerCase()] ?? null };
+      const { status, json } = await handleGame({ method: req.method, query: u.searchParams, headers, rawBody }, gameStore, HOST_PASSWORD);
+      res.writeHead(status, { 'content-type': 'application/json' });
+      res.end(JSON.stringify(json));
+    };
   }
 
   const web = http.createServer((req, res) => {
     if (relay && req.url.startsWith('/api/relay')) return relay(req, res);
     if (sets && req.url.startsWith('/api/sets')) return sets(req, res);
+    if (game && req.url.startsWith('/api/game')) return game(req, res);
     let p = decodeURIComponent(new URL(req.url, 'http://x').pathname);
     if (p.endsWith('/')) p += 'index.html';
     const file = path.join(ROOT, p);

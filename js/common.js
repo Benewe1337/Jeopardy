@@ -434,23 +434,46 @@
   const loadSet = () => normalizeSet(load(SET_KEY, defaultSet));
   const saveSet = (s) => save(SET_KEY, s);
 
-  function loadState() {
-    const s = load(STATE_KEY, defaultState);
-    const d = defaultState();
-    return {
+  const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
+  // Rohdaten (localStorage, Server-Spielstand) → gültiger State. Rein, ohne Seiteneffekte.
+  // `resume`: nicht wiederbelebbare Laufzeit-Dinge verwerfen (Timer, offenes Buzzer-Fenster, Intro).
+  function normalizeState(raw, { resume = false } = {}) {
+    const s = isObj(raw) ? raw : {};
+    const players = (Array.isArray(s.players) ? s.players : [])
+      .filter((p) => isObj(p) && (typeof p.id === 'string' || typeof p.id === 'number') && p.id !== '')
+      .map((p) => ({ ...p, id: String(p.id), name: String(p.name ?? ''), score: Number.isFinite(Number(p.score)) ? Number(p.score) : 0 }));
+    const used = Array.isArray(s.used) && s.used.length === ROUNDS
+      ? Array.from({ length: ROUNDS }, (_, r) => Array.from({ length: CATS }, (_, c) =>
+        Array.from({ length: ROWS }, (_, w) => !!(s.used[r] && s.used[r][c] && s.used[r][c][w]))))
+      : emptyUsed();
+    const history = (Array.isArray(s.history) ? s.history : []).filter(isObj);
+    const out = {
       round: s.round === 1 ? 1 : 0,
-      used: Array.isArray(s.used) && s.used.length === ROUNDS ? s.used : d.used,
-      players: Array.isArray(s.players) ? s.players : [],
-      current: s.current || null,
+      used,
+      players,
+      current: isObj(s.current) ? s.current : null,
       turn: typeof s.turn === 'string' ? s.turn : null,
-      stats: s.stats && typeof s.stats === 'object' ? s.stats : {},
-      personStats: s.personStats && typeof s.personStats === 'object' ? s.personStats : {},
+      stats: isObj(s.stats) ? s.stats : {},
+      personStats: isObj(s.personStats) ? s.personStats : {},
       mode: s.mode === 'team' ? 'team' : 'single',
       teamSize: clampTeamSize(s.teamSize),
       finished: !!s.finished,
-      history: Array.isArray(s.history) ? s.history : [],
+      history,
     };
+    if (resume) {
+      out.history = history.map((h) => (isObj(h.current) ? { ...h, current: stripLive(h.current) } : h));
+      if (out.current) out.current = stripLive(out.current);
+    }
+    return out;
   }
+  // Timer und Buzzer-Fenster überleben keinen Neustart: Gewinner bleibt, offen/„scharf“ wird geschlossen
+  function stripLive(cur) {
+    const c = { ...cur, timer: null };
+    if (isObj(c.buzz)) c.buzz = { open: false, winner: c.buzz.winner || null };
+    return c;
+  }
+  const loadState = () => normalizeState(load(STATE_KEY, defaultState));
   const saveState = (s) => save(STATE_KEY, s);
 
   function roomCode() {
@@ -1049,14 +1072,62 @@
     return normalizeSet(data);
   }
 
+
+  // ---------- Spielstand als Datei (Export/Import) ----------
+  const GAME_FORMAT = 'jeopardy-game';
+  const GAME_VERSION = 1;
+  const MAX_GAME_FILE_BYTES = 8_000_000;
+  const GAME_HISTORY_KEEP = 30;
+  const ROOM_RE = /^[A-Z0-9]{4,12}$/;
+
+  /** Spielstand (+ Set oder Set-Verweis) als Datei-Objekt. Rein; Antworten stecken drin → Host-only. */
+  function exportGame(state, set, { room, includeSet = true, setRef = null, now = new Date() } = {}) {
+    const st = normalizeState(state);
+    st.history = st.history.slice(-GAME_HISTORY_KEEP);
+    const ref = isObj(setRef) && typeof setRef.id === 'string' ? { id: String(setRef.id).slice(0, 80), updated: String(setRef.updated || '').slice(0, 40) } : null;
+    return {
+      format: GAME_FORMAT, v: GAME_VERSION, app: APP_VERSION,
+      room: ROOM_RE.test(String(room || '')) ? String(room) : null,
+      savedAt: now.toISOString(),
+      state: st,
+      set: includeSet && set ? normalizeSet(set) : null,
+      setRef: ref,
+    };
+  }
+
+  /** Spielstand-Datei prüfen (nie dem Inhalt trauen). → { ok:true, snapshot } | { ok:false, error } (deutsche Meldung). */
+  function parseGame(text, size = typeof text === 'string' ? text.length : 0) {
+    if (size > MAX_GAME_FILE_BYTES) return { ok: false, error: 'Datei ist zu groß (maximal 8 MB).' };
+    let data = text;
+    if (typeof text === 'string') {
+      try { data = JSON.parse(text); } catch (e) { return { ok: false, error: 'Datei ist kein gültiges JSON.' }; }
+    }
+    if (!isObj(data) || data.format !== GAME_FORMAT) return { ok: false, error: 'Das ist keine Jeopardy-Spielstand-Datei.' };
+    if (!Number.isInteger(data.v) || data.v < 1) return { ok: false, error: 'Spielstand-Datei ohne gültige Version.' };
+    if (data.v > GAME_VERSION) return { ok: false, error: 'Der Spielstand wurde mit einer neueren Version erstellt. Bitte die Seite neu laden (Strg+Shift+R).' };
+    if (!isObj(data.state) || !Array.isArray(data.state.players) || !Array.isArray(data.state.used)) return { ok: false, error: 'Der Spielstand in der Datei ist unvollständig.' };
+    let set = null;
+    if (data.set != null) {
+      try { set = parseSetFile(JSON.stringify(data.set)); } catch (e) { return { ok: false, error: 'Das Fragenset in der Datei ist ungültig: ' + e.message }; }
+    }
+    const state = normalizeState(data.state, { resume: true });
+    state.history = state.history.slice(-GAME_HISTORY_KEEP);
+    const ref = isObj(data.setRef) && typeof data.setRef.id === 'string' && data.setRef.id.length <= 80
+      ? { id: data.setRef.id, updated: String(data.setRef.updated || '').slice(0, 40) } : null;
+    const room = typeof data.room === 'string' && ROOM_RE.test(data.room) ? data.room : null;
+    const savedAt = typeof data.savedAt === 'string' && !Number.isNaN(Date.parse(data.savedAt)) ? data.savedAt : null;
+    return { ok: true, snapshot: { format: GAME_FORMAT, v: GAME_VERSION, app: String(data.app || '').slice(0, 40), room, savedAt, state, set, setRef: ref } };
+  }
+
   window.J = {
     copyCategories, mixSets, parseSetFile, pickCategory, MAX_SET_FILE_BYTES,
     PIXEL_STEPS, ZOOM_STEPS, imgSteps, imgMode, pixelLevel, pixelate, zoomCrop,
     CLUE_KINDS, isSpecialKind, parseNumber, estimateWinners, orderItems, shufflePerm, isPerm, orderCorrect, JOKERS, jokerInfo, jokerBlock, whoIsUp, hintPattern, judgePoints,
     APP_VERSION, CATS, ROWS, ROUNDS, SET_KEY,
     pointsFor, defaultSet, normalizeSet, defaultState,
-    loadSet, saveSet, loadState, saveState,
-    roomCode, newRoomCode, peerId, publicState, escapeHtml, safeColor, safeNum, renderScores,
+    loadSet, saveSet, loadState, normalizeState, saveState,
+    exportGame, parseGame, MAX_GAME_FILE_BYTES,
+    roomCode, newRoomCode, ROOM_KEY, peerId, publicState, escapeHtml, safeColor, safeNum, renderScores,
     THEMES, getTheme, applyTheme, setTheme,
     penaltyFor, stealFor, sfx, startTimerMusic, stopTimerMusic, timerMusicOn, soundOn, setSoundOn, unlockAudio, audioUnlocked, renderTimer,
     TIMER_MS: 15000,
