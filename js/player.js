@@ -104,6 +104,9 @@
     $('finish').classList.toggle('show', !!s.finished);
     if (s.finished) {
       J.renderPodium($('podium'), s.players, s.title, s.stats, s.mode === 'team' ? s.personStats : null);
+      $('podium').hidden = !!s.statsShown;
+      $('statsBox').hidden = !s.statsShown;
+      if (s.statsShown) J.stats.renderStats($('statsBox'), J.stats.summarize(s.players, s.stats, s.personStats, s.mode));
       if (!wasFinished) J.confetti($('finish'));
     }
     wasFinished = !!s.finished;

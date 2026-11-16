@@ -413,7 +413,7 @@
   function defaultState() {
     return {
       round: 0, used: emptyUsed(), players: [], current: null, turn: null, finished: false,
-      stats: {}, personStats: {}, mode: 'single', teamSize: 3, history: [],
+      stats: {}, personStats: {}, statsShown: false, mode: 'single', teamSize: 3, history: [],
     };
   }
 
@@ -450,6 +450,7 @@
       turn: typeof s.turn === 'string' ? s.turn : null,
       stats: s.stats && typeof s.stats === 'object' ? s.stats : {},
       personStats: s.personStats && typeof s.personStats === 'object' ? s.personStats : {},
+      statsShown: !!s.statsShown,
       mode: s.mode === 'team' ? 'team' : 'single',
       teamSize: clampTeamSize(s.teamSize),
       finished: !!s.finished,
@@ -574,6 +575,7 @@
       teamSize: clampTeamSize(state.teamSize),
       turn: state.turn || null,
       finished: !!state.finished,
+      statsShown: !!state.statsShown && !!state.finished,
       stats: state.stats || {},
       personStats: state.mode === 'team' ? state.personStats || {} : {},
       current,
