@@ -310,7 +310,7 @@
           persist();
         });
         hintFor();
-        box.append(q, a, note, kind, imageControls(clue));
+        box.append(q, a, note, kind, imageControls(clue), JMedia.editorControls(clue, persist));
         col.appendChild(box);
       });
       grid.appendChild(col);

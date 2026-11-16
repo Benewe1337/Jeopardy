@@ -63,6 +63,11 @@
           const img = safeImg(cl.img);
           if (img) cat.clues[row].img = img;
           if (typeof cl.note === 'string') cat.clues[row].note = cl.note;
+          const media = safeMedia(cl.media);
+          if (media) {
+            cat.clues[row].media = media;
+            cat.clues[row].mediaType = mediaTypeOf({ media, mediaType: cl.mediaType });
+          }
           if (cl.pixel === true && img) cat.clues[row].pixel = true;
           else if (cl.zoom === true && img) {
             cat.clues[row].zoom = true;
@@ -83,6 +88,44 @@
     if (typeof v !== 'string') return '';
     v = v.trim();
     return /^https?:\/\//i.test(v) || /^data:image\/(png|jpe?g|gif|webp);base64,/i.test(v) ? v : '';
+  }
+
+  // ---------- Audio-/Video-Clips ----------
+  // Upload-Grenzen (Datei in Bytes): als Base64 ~4/3 so groß; Set-Speicher (4 MB Body) und
+  // Relay (3 MB pro Nachricht) müssen den Clip noch tragen.
+  const MEDIA_LIMITS = { audio: 1_500_000, video: 2_000_000 };
+  const MEDIA_DATA_RE = /^data:(audio|video)\/[a-z0-9.+-]+(;codecs=[^;,]+)?;base64,/i;
+  const MEDIA_VIDEO_EXT = /\.(mp4|webm|mov|m4v|ogv)$/i;
+
+  // Nur Web-Adressen (http/https mit Host) oder hochgeladene Clips zulassen
+  function safeMedia(v) {
+    if (typeof v !== 'string') return '';
+    v = v.trim();
+    if (MEDIA_DATA_RE.test(v)) return v;
+    if (!/^https?:\/\//i.test(v)) return '';
+    try { return new URL(v).hostname ? v : ''; } catch (e) { return ''; }
+  }
+
+  // 'audio' oder 'video': aus der Frage, sonst aus data:-Typ bzw. Dateiendung, sonst Audio
+  function mediaTypeOf(clue) {
+    if (!clue || !safeMedia(clue.media)) return null;
+    if (clue.mediaType === 'audio' || clue.mediaType === 'video') return clue.mediaType;
+    const m = /^data:(audio|video)\//i.exec(clue.media.trim());
+    if (m) return m[1].toLowerCase();
+    try { return MEDIA_VIDEO_EXT.test(new URL(clue.media.trim()).pathname) ? 'video' : 'audio'; } catch (e) { return 'audio'; }
+  }
+
+  // Upload prüfen → Fehlertext (Deutsch) oder null
+  function mediaFileError(file) {
+    if (!file) return 'Keine Datei gewählt.';
+    const type = file.type && file.type.split('/')[0];
+    if (type !== 'audio' && type !== 'video') return 'Das ist keine Audio- oder Videodatei.';
+    const max = MEDIA_LIMITS[type];
+    if (file.size > max) {
+      return `Die ${type === 'audio' ? 'Audiodatei' : 'Videodatei'} ist zu groß (${(file.size / 1e6).toFixed(1)} MB). ` +
+        `Erlaubt sind höchstens ${(max / 1e6).toFixed(1).replace('.0', '')} MB – kürze den Clip oder nutze einen Link.`;
+    }
+    return null;
   }
 
   // Hochgeladenes Bild verkleinern (max. 1000 px, JPEG), damit es in den Browserspeicher
@@ -525,6 +568,8 @@
         category: set.rounds[cur.round].categories[cur.cat].name,
         value: pointsFor(cur.round, cur.row),
         q: clue.q,
+        // Clip nur als Hinweis: abgespielt wird er auf Host und TV, die Daten gehen nie an Handys
+        media: safeMedia(clue.media) ? { kind: mediaTypeOf(clue) } : null,
         // Verpixelte Bilder: echtes Bild erst nach der letzten Stufe; das Mini-Bild setzt der Host ein
         img: pixelLevel(clue, cur) == null ? safeImg(clue.img) || null : null,
         pixel: pixelLevel(clue, cur) == null ? null : { step: pixelLevel(clue, cur), steps: imgSteps(clue).length, mode: imgMode(clue) },
@@ -1051,6 +1096,7 @@
 
   window.J = {
     copyCategories, mixSets, parseSetFile, pickCategory, MAX_SET_FILE_BYTES,
+    safeMedia, mediaTypeOf, mediaFileError, MEDIA_LIMITS,
     PIXEL_STEPS, ZOOM_STEPS, imgSteps, imgMode, pixelLevel, pixelate, zoomCrop,
     CLUE_KINDS, isSpecialKind, parseNumber, estimateWinners, orderItems, shufflePerm, isPerm, orderCorrect, JOKERS, jokerInfo, jokerBlock, whoIsUp, hintPattern, judgePoints,
     APP_VERSION, CATS, ROWS, ROUNDS, SET_KEY,

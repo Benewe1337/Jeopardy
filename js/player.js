@@ -1,5 +1,6 @@
 (function () {
   const $ = (id) => document.getElementById(id);
+  JMedia.tvInit($);
   const room = (new URLSearchParams(location.search).get('room') || '').trim().toUpperCase();
 
   if (!room) {
@@ -82,6 +83,7 @@
     if (!cur) ov.classList.remove('fx-right', 'fx-wrong');
     if (cur) {
       $('meta').textContent = `${cur.category} – ${cur.value}`;
+      $('mediaHint').hidden = !cur.media || me === 'tv';
       $('q').textContent = cur.q;
       const img = $('img');
       const imgSrc = J.safeImg(cur.img);
@@ -593,7 +595,7 @@
 
   function sendHello() {
     const pid = me && me !== 'watch' && me !== 'tv' ? me : null;
-    if (conn && conn.open) conn.send({ type: 'hello', playerId: pid, deviceId, name: myName });
+    if (conn && conn.open) conn.send({ type: 'hello', playerId: pid, deviceId, name: myName, tv: me === 'tv' });
   }
 
   // ---------- Buzzer ----------
@@ -785,6 +787,7 @@
       if (!msg) return;
       if (msg.type === 'state') render(msg.data);
       else if (msg.type === 'sfx' && J.soundOn()) J.sfx(msg.name);
+      else if (msg.type === 'media' && me === 'tv') JMedia.tvMessage(msg);
       else if (msg.type === 'teamAnswer' && msg.key === lastJokerKey) {
         // Teammitglied hat abgegeben → hier übernehmen, damit alle sehen, was fürs Team zählt
         teamBy = msg.by;
