@@ -364,6 +364,8 @@
       p.score += delta;
       cur.judged[p.id] = verdict;
       recordVerdict(p.id, verdict, false);
+      if (!state.stats) state.stats = {};
+      J.stats.recordDd(state.stats, p.id, verdict, dd.wager);
       if (cur.kind === 'estimate') {
         cur.est.answer = J.parseNumber(clue.a);
         cur.est.winners = verdict === 'right' ? [p.id] : [];

@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const { startEnv, openHost, joinPlayer } = require('./helpers');
 
 let env;
-test.before(async () => { env = await startEnv({ JEOP_BUZZ_DELAY_MS: 200, JEOP_BUZZ_WINDOW_MS: 600 }); });
+test.before(async () => { env = await startEnv({ JEOP_BUZZ_DELAY_MS: 200, JEOP_BUZZ_WINDOW_MS: 600, JEOP_DD_MS: 300 }); });
 test.after(async () => { await env.stop(); });
 
 async function download(page, sel) {
@@ -152,5 +152,45 @@ test('Statistik im Team-Modus: Team plus Person für Buzzer-Zeiten', async (t) =
     assert.equal(j.persons[0].team, 'Rot');
   });
 
+  assert.deepEqual(env.errors, []);
+});
+
+test('Statistik: Daily Double (Undo zählt nicht doppelt) in Ansicht und Export', async (t) => {
+  const { host, code } = await openHost(env, { names: ['Anna', 'Ben'] });
+  await host.evaluate(() => {
+    const s = J.defaultSet();
+    s.rounds[0].categories[0].clues[0].dd = true;
+    localStorage.setItem('jeopardy.set', JSON.stringify(s));
+  });
+  await host.reload();
+  await host.waitForFunction(() => document.getElementById('peerStatus').textContent === 'online');
+  const anna = await joinPlayer(env, code, { pick: 'Anna' });
+  await host.waitForFunction(() => document.querySelectorAll('#players .device').length === 1);
+
+  await host.locator('.cell.val').nth(0).click();
+  await anna.waitForSelector('#ddWagerInput');
+  await anna.fill('#ddWagerInput', '100');
+  await anna.click('#ddWagerBtn');
+  await host.waitForSelector('#ddRight');
+  await host.click('#ddRight');
+  await host.waitForFunction(() => J.loadState().stats[Object.keys(J.loadState().stats)[0]].dd.won === 1);
+  await host.click('#undo');
+  await host.waitForFunction(() => Object.values(J.loadState().stats || {}).every((x) => !x.dd));
+  await host.click('#ddWrong');
+  await host.waitForFunction(() => Object.values(J.loadState().stats).some((x) => x.dd && x.dd.lost === 1));
+  await host.click('#close');
+
+  await host.click('#finishBtn');
+  await host.click('#statsToggle');
+  await host.waitForSelector('#statsBox .stats-main');
+  const a = await rowCells(host, '#statsBox .stats-main', 'Anna');
+  assert.match(a[9], /Daily Double: 0 ✓ \/ 1 ✗ \(\+0 \/ −100\)/);
+  const { text } = await download(host, '#exportCsv');
+  assert.ok(text.includes('Spieler,Anna,,,Daily Double gewonnen,0'));
+  assert.ok(text.includes('Spieler,Anna,,,Daily Double verloren,1'));
+  assert.ok(text.includes('Spieler,Anna,,,Daily Double Punkte verloren,100'));
+  const j = JSON.parse((await download(host, '#exportJson')).text);
+  assert.deepEqual(j.players.find((p) => p.name === 'Anna').dd, { won: 0, lost: 1, wonPoints: 0, lostPoints: 100 });
+  assert.equal(j.players.find((p) => p.name === 'Ben').dd, null);
   assert.deepEqual(env.errors, []);
 });

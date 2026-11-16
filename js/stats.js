@@ -80,6 +80,14 @@
     entry(stats, pid).fj = { wager: num(result.wager), verdict: result.verdict === 'right' ? 'right' : 'wrong', delta: num(result.delta) };
   }
 
+  // Daily Double: Anzahl gewonnen/verloren plus Einsatzsumme (wager > 0). Rückgängig läuft über den Undo-Snapshot.
+  function recordDd(stats, pid, verdict, wager) {
+    const s = entry(stats, pid);
+    if (!s.dd || typeof s.dd !== 'object') s.dd = { won: 0, lost: 0, wonPoints: 0, lostPoints: 0 };
+    const w = Math.max(0, num(wager));
+    if (verdict === 'right') { bump(s.dd, 'won'); bump(s.dd, 'wonPoints', w); } else { bump(s.dd, 'lost'); bump(s.dd, 'lostPoints', w); }
+  }
+
   const rate = (right, wrong) => (right + wrong ? Math.round((right / (right + wrong)) * 1000) / 10 : null);
   function reactionStats(list) {
     const xs = (Array.isArray(list) ? list : []).filter((x) => Number.isFinite(x) && x >= 0);
@@ -109,7 +117,7 @@
       });
       const fj = s.fj && typeof s.fj === 'object'
         ? { wager: num(s.fj.wager), verdict: s.fj.verdict === 'right' ? 'right' : 'wrong', delta: num(s.fj.delta) } : null;
-      const dd = s.dd && typeof s.dd === 'object' ? { won: num(s.dd.won), lost: num(s.dd.lost) } : null;
+      const dd = s.dd && typeof s.dd === 'object' ? { won: num(s.dd.won), lost: num(s.dd.lost), wonPoints: num(s.dd.wonPoints), lostPoints: num(s.dd.lostPoints) } : null;
       return {
         id: String(p.id), name: String(p.name), score: num(p.score),
         right, wrong, rate: rate(right, wrong), steals: num(s.steals), buzzWins: num(s.buzzWins),
@@ -150,7 +158,7 @@
         if (k !== 'hint') { m(`Joker ${k} erfolgreich`, p.jokers[k].won); m(`Joker ${k} fehlgeschlagen`, p.jokers[k].lost); }
       });
       if (p.fj) { m('Final Jeopardy Einsatz', p.fj.wager); m('Final Jeopardy Ergebnis', p.fj.verdict === 'right' ? 'richtig' : 'falsch'); m('Final Jeopardy Punkte', p.fj.delta); }
-      if (p.dd) { m('Daily Double gewonnen', p.dd.won); m('Daily Double verloren', p.dd.lost); }
+      if (p.dd) { m('Daily Double gewonnen', p.dd.won); m('Daily Double verloren', p.dd.lost); m('Daily Double Punkte gewonnen', p.dd.wonPoints); m('Daily Double Punkte verloren', p.dd.lostPoints); }
       p.cats.forEach((c) => {
         rows.push([unit, p.name, '', c.name, 'Richtig', c.right]);
         rows.push([unit, p.name, '', c.name, 'Falsch', c.wrong]);
@@ -185,7 +193,7 @@
     };
     const special = (p) => [
       p.fj ? `Final: ${p.fj.verdict === 'right' ? '✓' : '✗'} ${p.fj.delta > 0 ? '+' : ''}${p.fj.delta} (Einsatz ${p.fj.wager})` : '',
-      p.dd ? `Daily Double: ${p.dd.won} ✓ / ${p.dd.lost} ✗` : '',
+      p.dd ? `Daily Double: ${p.dd.won} ✓ / ${p.dd.lost} ✗ (+${p.dd.wonPoints} / −${p.dd.lostPoints})` : '',
     ].filter(Boolean).join(' · ') || '–';
     const rows = sum.players.map((p) => `<tr>
       <th scope="row">${esc(p.name)}</th><td>${esc(p.score)}</td>
@@ -208,5 +216,5 @@
       <tbody>${rows}</tbody></table>${cats}${people}</div></div>`;
   }
 
-  J.stats = { recordVerdict, recordJoker, recordBuzz, recordFinal, summarize, csvCell, toCsv, toJson, renderStats, reactionStats };
+  J.stats = { recordVerdict, recordJoker, recordBuzz, recordFinal, recordDd, summarize, csvCell, toCsv, toJson, renderStats, reactionStats };
 })();
