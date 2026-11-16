@@ -56,6 +56,8 @@
         </div>
       </section>
 
+      <section class="host-clue fj-host" id="fjPanel"></section>
+
       <div class="turn-banner" id="turnBanner" hidden></div>
       <div class="board" id="board"></div>
       <p class="hint">Feld anklicken öffnet die Frage. Ein gespieltes Feld anklicken gibt es wieder frei.</p>
@@ -87,12 +89,14 @@
         <div class="themes" id="themes"></div>
         <h3>Spiel</h3>
         <div class="btn-row">
+          <button class="small" id="fjBtn">⭐ Final Jeopardy</button>
           <button class="small primary" id="finishBtn">🏆 Siegerehrung</button>
           <button class="small" id="soundToggle">🔊 Sounds an</button>
           <a class="btn small" href="editor.html" target="_blank">Fragen bearbeiten</a>
           <button class="small ghost" id="resetGame">Spielstand zurücksetzen</button>
           <button class="small ghost" id="newCode">Neuer Raumcode</button>
         </div>
+        <p class="hint" id="fjHint" hidden></p>
         <p class="hint">Änderungen im Editor-Tab werden sofort übernommen.</p>
         <details class="turn-box" id="turnBox">
           <summary>🛜 Verbindungshilfe <span class="turn-state" id="turnState"></span></summary>
@@ -134,6 +138,8 @@
   <script src="js/qr.js"></script>
   <script src="js/common.js"></script>
   <script src="js/net.js"></script>
+  <script src="js/finale.js"></script>
+  <script src="js/finale-host.js"></script>
   <script src="js/host.js"></script>
 </body>
 </html>

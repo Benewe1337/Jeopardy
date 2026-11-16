@@ -6,6 +6,8 @@ const vm = require('vm');
 
 const SRC = fs.readFileSync(path.join(__dirname, '../../js/common.js'), 'utf8');
 
+const FINALE = fs.readFileSync(path.join(__dirname, '../../js/finale.js'), 'utf8');
+
 function loadCommon() {
   const store = new Map();
   const localStorage = {
@@ -18,6 +20,7 @@ function loadCommon() {
   const context = { window, localStorage, document, console, URL, Date, Math, JSON, btoa, atob, escape, unescape };
   vm.createContext(context);
   vm.runInContext(SRC, context, { filename: 'common.js' });
+  vm.runInContext(FINALE, context, { filename: 'finale.js' });
   return { J: window.J, localStorage, document };
 }
 
