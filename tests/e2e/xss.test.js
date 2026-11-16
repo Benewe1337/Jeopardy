@@ -8,6 +8,8 @@ test.before(async () => { env = await startEnv(); });
 test.after(async () => { await env.stop(); });
 
 const EVIL = '<img src=x onerror=window.__xss=1>';
+// Das Namensfeld im Host kürzt auf 30 Zeichen (maxlength)
+const EVIL_NAME = EVIL.slice(0, 30);
 const xss = (page) => page.evaluate(() => window.__xss);
 
 test('HTML in Spielername, Kategorie und Frage bleibt Text (Host, Spieler, TV)', async (t) => {
@@ -30,10 +32,10 @@ test('HTML in Spielername, Kategorie und Frage bleibt Text (Host, Spieler, TV)',
 
   await t.test('Namen und Kategorie erscheinen als Text', async () => {
     for (const pg of [player, tv]) {
-      await pg.waitForFunction((e) => document.getElementById('scores').textContent.includes(e), EVIL);
+      await pg.waitForFunction((e) => document.getElementById('scores').textContent.includes(e), EVIL_NAME);
       assert.equal(await pg.locator('#scores img').count(), 0);
     }
-    assert.equal(await host.locator('#players .pname').first().textContent(), EVIL);
+    assert.equal(await host.locator('#players .pname').first().textContent(), EVIL_NAME);
     for (const pg of [player, tv]) assert.equal(await pg.locator('#board img').count(), 0);
     assert.equal(await host.locator('#players img, #board img').count(), 0);
   });
