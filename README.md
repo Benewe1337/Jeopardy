@@ -95,4 +95,8 @@ npm run test:e2e:relay            # Browser-Tests über das HTTP-Relay (wie auf 
 ## CI und Veröffentlichung
 `.github/workflows/ci.yml` führt bei jedem Push und Pull Request alle Tests aus. **Nur wenn alle grün sind**, wird der Default-Branch auf GitHub Pages veröffentlicht (Repo → *Settings* → *Pages* → *Source: GitHub Actions*).
 
+Veröffentlicht wird nicht das ganze Repo, sondern nur, was der Browser braucht: `scripts/build-pages.sh` kopiert `index/host/player/editor.html`, `css/`, `js/`, `fonts/` und `vendor/` nach `_site/`. Tests, `api/`, `lib/`, `CLAUDE.md`, `package*.json`, `middleware.js` und `vercel.json` landen nicht auf Pages. Kommt eine neue Laufzeitdatei dazu, muss sie in die Liste im Skript (ein Test prüft die Liste).
+
+**Keine externen Skripte:** PeerJS (1.5.4, MIT) liegt in `vendor/peerjs.min.js` und wird von der eigenen Seite geladen, nicht von einem CDN. Ein Test hält die Datei identisch mit dem `peerjs`-Paket aus `package.json`; beim Update `cp node_modules/peerjs/dist/peerjs.min.js vendor/` und die Lizenz mitkopieren.
+
 Lokal ansehen: `python3 -m http.server` im Repo-Ordner, dann `http://localhost:8000` öffnen.

@@ -53,8 +53,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: actions/configure-pages@v5
+      # Nur Laufzeitdateien veröffentlichen (keine Tests, api/, lib/, Konfiguration)
+      - run: scripts/build-pages.sh _site
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

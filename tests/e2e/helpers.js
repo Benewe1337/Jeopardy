@@ -1,7 +1,7 @@
 // Gemeinsames Gerüst für die Browser-Tests:
 // - statischer Webserver für das Repo
 // - eigener PeerJS-Vermittlungsserver (kein Internet nötig)
-// - Chromium über Playwright; das PeerJS-Skript vom CDN wird lokal ausgeliefert
+// - Chromium über Playwright; PeerJS kommt aus vendor/ (kein CDN)
 // - mit E2E_TRANSPORT=relay stattdessen das HTTP-Relay (api/relay) mit Speicher-Backend,
 //   so wie die Seite auf Vercel läuft
 const http = require('http');
@@ -12,7 +12,6 @@ const { spawn } = require('child_process');
 const { chromium } = require('playwright');
 
 const ROOT = path.resolve(__dirname, '../..');
-const PEERJS = fs.readFileSync(require.resolve('peerjs/dist/peerjs.min.js'), 'utf8');
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css',
   '.woff2': 'font/woff2', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg',
@@ -119,7 +118,6 @@ async function startEnv(init = {}) {
 
   async function page({ viewport = { width: 1280, height: 800 }, extraInit = {} } = {}) {
     const ctx = await browser.newContext({ viewport });
-    await ctx.route('https://unpkg.com/**', (r) => r.fulfill({ body: PEERJS, contentType: 'application/javascript' }));
     await ctx.route('https://img.example.com/**', (r) => r.fulfill({ body: TEST_PNG, contentType: 'image/png' }));
     await ctx.addInitScript(([port, vars]) => {
       Object.assign(window, vars);
