@@ -28,6 +28,7 @@
         <button class="small" id="setDup" type="button">Duplizieren</button>
         <button class="small" id="setRename" type="button">Umbenennen</button>
         <button class="small" id="setCopy" type="button">Kategorien kopieren / mischen…</button>
+        <button class="small" id="setCatalog" type="button">Katalog…</button>
         <button class="small ghost" id="setDel" type="button">Löschen</button>
         <span class="set-source" id="setSource"></span>
       </div>
@@ -67,6 +68,40 @@
       </div>
     </section>
 
+    <section class="card setmix catalog" id="catPanel" hidden>
+      <div class="row setbar-row">
+        <strong>Fragenkatalog</strong>
+        <div class="spacer"></div>
+        <button class="small ghost" id="catClose" type="button">Schließen</button>
+      </div>
+      <div class="row setbar-row">
+        <label for="catLevel">Runde</label>
+        <select id="catLevel"><option value="">alle</option><option value="runde1">Runde 1</option><option value="runde2">Runde 2</option></select>
+        <label for="catTag">Thema</label>
+        <select id="catTag"><option value="">alle</option></select>
+        <label for="catType">Fragenart</label>
+        <select id="catType"><option value="">alle</option><option value="normal">nur normale Fragen</option></select>
+        <input id="catText" type="search" placeholder="Suchen…" aria-label="Katalog durchsuchen">
+        <span class="hint" id="catCount"></span>
+      </div>
+      <div class="cat-list" id="catList"></div>
+      <div class="row setbar-row">
+        <label for="catRound">Einfügen in</label>
+        <select id="catRound"><option value="0">Runde 1</option><option value="1">Runde 2</option></select>
+        <label for="catSlot">ab Platz</label>
+        <select id="catSlot"></select>
+        <button class="small primary" id="catInsert" type="button">Angekreuzte in dieses Set einfügen</button>
+        <button class="small" id="catRetry" type="button">Neu laden</button>
+        <span class="hint" id="catMsg"></span>
+      </div>
+      <div class="row setbar-row cat-auto">
+        <strong>Spiel automatisch zusammenstellen</strong>
+        <label for="catAutoTag">Bevorzugtes Thema</label>
+        <select id="catAutoTag"><option value="">egal</option></select>
+        <button class="small primary" id="catAuto" type="button">Spiel zusammenstellen</button>
+      </div>
+    </section>
+
     <input id="title" class="title-field" placeholder="Titel des Spiels">
 
     <div class="tabs seg">
@@ -81,5 +116,7 @@
   <script src="js/sets.js"></script>
   <script src="js/editor.js"></script>
   <script src="js/setmix.js"></script>
+  <script src="js/catalog-gen.js"></script>
+  <script src="js/catalog-ui.js"></script>
 </body>
 </html>

@@ -1546,3 +1546,13 @@ body.tv .buzz-area, body.tv .react-bar { display: none !important; }
 .mix-picks { display: flex; flex-wrap: wrap; gap: 6px; }
 .mix-pick { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface-2); }
 .mix-pick button { padding: 0 6px; }
+
+/* Fragenkatalog im Editor */
+.catalog .cat-list { margin-top: 10px; max-height: 340px; overflow: auto; display: grid; gap: 6px; }
+.cat-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.cat-row > label { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.cat-row > div { grid-column: 1 / -1; }
+.cat-meta { opacity: .65; font-size: .85em; }
+.cat-preview { margin: 4px 0 2px; padding-left: 22px; font-size: .92em; }
+.catalog .cat-auto { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+#catMsg.error { color: var(--bad, #e5484d); }

@@ -67,7 +67,7 @@
       sets.forEach((s) => selectEl.add(new Option(s.name, s.id, false, s.id === active)));
     }
     selectEl.disabled = !ready;
-    ['setNew', 'setDup', 'setRename', 'setDel', 'setCopy'].forEach((id) => ($(id).disabled = !ready));
+    ['setNew', 'setDup', 'setRename', 'setDel', 'setCopy', 'setCatalog'].forEach((id) => ($(id).disabled = !ready));
     sourceEl.classList.remove('error');
     sourceEl.textContent = !ready ? '🔒 Gespeicherte Sets gesperrt'
       : lib.kind === 'server' ? '☁ Auf dem Server gespeichert' : '💾 Nur in diesem Browser gespeichert';
