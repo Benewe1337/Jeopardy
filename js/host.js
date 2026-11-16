@@ -3,6 +3,7 @@
   let state = J.loadState();
   const HISTORY_LIMIT = 200;
   const $ = (id) => document.getElementById(id);
+  JMedia.host({ $, conns: () => conns });
 
   // ---------- State-Änderungen mit Undo ----------
   function snapshot(label) {
@@ -567,9 +568,10 @@
   function renderClue() {
     const cur = state.current;
     $('clue').classList.toggle('show', !!cur);
-    if (!cur) return;
+    if (!cur) { JMedia.hostClue(null, null); return; }
     const cat = set.rounds[cur.round].categories[cur.cat];
     const clue = cat.clues[cur.row];
+    JMedia.hostClue(clue, `${cur.round}:${cur.cat}:${cur.row}`);
     const value = J.pointsFor(cur.round, cur.row);
     const penalty = J.penaltyFor(cur.round, cur.row);
     const judged = cur.judged || (cur.judged = {});
@@ -1194,6 +1196,8 @@
         }
       }
       conn.playerId = ok;
+      conn.isTv = msg.tv === true;
+      if (conn.isTv) JMedia.hostTvJoined(conn);
       renderPlayers();
       broadcast(); // Belegung an alle schicken
       if (ok) sendHint(ok); // nach Verbindungsabbruch den Tipp erneut schicken

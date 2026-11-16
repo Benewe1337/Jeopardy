@@ -32,6 +32,15 @@
         <div class="meta" id="clueMeta"></div>
         <div class="q" id="clueQ"></div>
         <img class="clue-img host-img" id="clueImg" alt="" hidden>
+        <div class="media-box" id="mediaBox" hidden>
+          <video class="host-media" id="hostMedia" playsinline preload="auto" hidden></video>
+          <div class="media-ctrl">
+            <button class="small" id="mediaPlay">▶ Abspielen</button>
+            <button class="small" id="mediaRestart">↺ Von vorn</button>
+            <button class="small ghost" id="mediaMute">🔊 Hier an</button>
+            <span class="media-note">läuft auch am TV</span>
+          </div>
+        </div>
         <div class="hint" id="pixelHint" hidden></div>
         <div class="a" id="clueA"></div>
         <div class="note" id="clueNote" hidden></div>
@@ -156,6 +165,7 @@
   <script src="vendor/qrcode.js"></script>
   <script src="js/qr.js"></script>
   <script src="js/common.js"></script>
+  <script src="js/media.js"></script>
   <script src="js/net.js"></script>
   <script src="js/gamesync.js"></script>
   <script src="js/gameui.js"></script>

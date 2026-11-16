@@ -1,0 +1,79 @@
+// Audio-/Video-Clips: Host steuert, TV spielt, Handys sehen nur den Hinweis
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { startEnv, openHost, joinPlayer } = require('./helpers');
+
+let env;
+test.before(async () => { env = await startEnv({ JEOP_BUZZ_DELAY_MS: 150 }); });
+test.after(async () => { await env.stop(); });
+
+// 2 s Stille als 8-kHz-WAV
+function wavDataUrl() {
+  const n = 16000;
+  const b = Buffer.alloc(44 + n);
+  b.write('RIFF', 0); b.writeUInt32LE(36 + n, 4); b.write('WAVEfmt ', 8);
+  b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22);
+  b.writeUInt32LE(8000, 24); b.writeUInt32LE(8000, 28); b.writeUInt16LE(1, 32); b.writeUInt16LE(8, 34);
+  b.write('data', 36); b.writeUInt32LE(n, 40); b.fill(128, 44);
+  return 'data:audio/wav;base64,' + b.toString('base64');
+}
+
+for (const mode of ['single', 'team']) {
+  test(`Clip: Host spielt, TV bekommt die Befehle, Handy zeigt nur den Hinweis (${mode})`, async (t) => {
+    const wav = wavDataUrl();
+    const { host, code } = await openHost(env, { mode, teamSize: mode === 'team' ? 2 : undefined, names: ['Anna', 'Ben'] });
+    await host.evaluate((src) => {
+      const s = JSON.parse(localStorage.getItem('jeopardy.set') || 'null') || J.defaultSet();
+      s.rounds[0].categories[0].clues[0].media = src;
+      s.rounds[0].categories[0].clues[0].mediaType = 'audio';
+      localStorage.setItem('jeopardy.set', JSON.stringify(s));
+    }, wav);
+    await host.reload();
+    await host.waitForFunction(() => document.getElementById('peerStatus').textContent === 'online');
+    const code2 = await host.textContent('#code');
+
+    const tv = await env.page({ viewport: { width: 1280, height: 720 } });
+    await tv.goto(env.base + '/player.html?room=' + code2);
+    await tv.waitForSelector('#picker:not([hidden])');
+    await tv.click('#tvView');
+    const phone = await joinPlayer(env, code2, mode === 'team' ? { pick: 'Anna', name: 'Maxi' } : { pick: 'Anna' });
+
+    await host.locator('.cell.val').nth(0).click();
+    await t.test('Host zeigt Steuerung, TV lädt Clip, Handy nur Hinweis', async () => {
+      await host.waitForSelector('#mediaBox:not([hidden])');
+      await tv.waitForFunction(() => !!document.getElementById('tvMedia').getAttribute('src'));
+      await phone.waitForSelector('#mediaHint:not([hidden])');
+      assert.match(await phone.textContent('#mediaHint'), /Clip läuft am TV/);
+      assert.equal(await phone.locator('audio[src], video[src]').count(), 0, 'Handy rendert keine Medien');
+      assert.ok(await phone.evaluate(() => !document.documentElement.innerHTML.includes('data:audio')));
+      assert.ok(await tv.evaluate(() => document.getElementById('tvMedia').paused), 'kein Autoplay');
+    });
+    await t.test('Play, Pause und Neustart wirken auf dem TV', async () => {
+      await host.click('#mediaPlay');
+      await tv.waitForFunction(() => !document.getElementById('tvMedia').paused);
+      await host.click('#mediaPlay');
+      await tv.waitForFunction(() => document.getElementById('tvMedia').paused);
+      await host.click('#mediaPlay');
+      await tv.waitForFunction(() => document.getElementById('tvMedia').currentTime > 0.2);
+      await host.click('#mediaRestart');
+      await tv.waitForFunction(() => document.getElementById('tvMedia').currentTime < 0.2 && !document.getElementById('tvMedia').paused);
+      await host.click('#mediaMute');
+      assert.ok(await host.evaluate(() => document.getElementById('hostMedia').muted));
+    });
+    await t.test('Frage schließen stoppt den Clip, Antwort erscheint nie im Handy-Clip', async () => {
+      await host.click('#cancel');
+      await tv.waitForFunction(() => !document.getElementById('tvMedia').getAttribute('src') && document.getElementById('tvMediaBox').hidden);
+      await phone.waitForSelector('#mediaHint', { state: 'hidden' });
+    });
+    await t.test('TV, der später beitritt, bekommt den laufenden Clip nachgereicht', async () => {
+      await host.locator('.cell.val').nth(0).click();
+      await host.waitForSelector('#mediaBox:not([hidden])');
+      const tv2 = await env.page({ viewport: { width: 1280, height: 720 } });
+      await tv2.goto(env.base + '/player.html?room=' + code2);
+      await tv2.waitForSelector('#picker:not([hidden])');
+      await tv2.click('#tvView');
+      await tv2.waitForFunction(() => !!document.getElementById('tvMedia').getAttribute('src'));
+    });
+    assert.deepEqual(env.errors, []);
+  });
+}
