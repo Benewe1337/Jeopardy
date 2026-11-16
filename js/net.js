@@ -26,10 +26,10 @@
     return t;
   }
 
-  async function api(op, body, signal) {
+  async function api(op, body, signal, extraHeaders) {
     const res = await fetch(`${API}?op=${op}`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...extraHeaders },
       body: JSON.stringify(body),
       signal,
       cache: 'no-store',
@@ -107,9 +107,11 @@
   }
 
   class RelayHostPeer extends Emitter {
-    constructor(room) {
+    // options.takeover: Spiel auf diesem Gerät fortsetzen → Raum sofort übernehmen (braucht das Host-Passwort)
+    constructor(room, options) {
       super();
       this.room = room;
+      this.takeover = !!(options && options.takeover);
       this.token = hostToken();
       this.conns = new Map();
       this.destroyed = false;
@@ -121,16 +123,22 @@
       this._start();
       this.sweep = setInterval(() => this._sweep(), HEARTBEAT_MS);
     }
-    async _start() {
+    // again: erneute Anmeldung nach 403 (Raum wurde uebernommen). Bekommen wir dann 409, hat ein
+    // anderes Fenster den Raum → 'superseded', kein Auto-Retry (sonst kaempfen zwei Fenster ewig).
+    async _start(again) {
+      const forced = this.takeover && !again;
       try {
-        const res = await api('host', { room: this.room, token: this.token }, this.abort.signal);
+        const headers = forced ? { 'x-host-password': localStorage.getItem('jeopardy.hostPw') || '' } : undefined;
+        const res = await api('host', { room: this.room, token: this.token, ...(forced ? { takeover: true } : {}) }, this.abort.signal, headers);
         this.cursor = res.seq;
+        this.takeover = false;
       } catch (e) {
         if (this.destroyed) return;
-        if (e.status === 409) return this.emit('error', { type: 'unavailable-id' });
+        if (forced && e.status === 401) { this.takeover = false; return this._start(); }
+        if (e.status === 409) return this.emit('error', { type: again ? 'superseded' : 'unavailable-id' });
         this.emit('error', { type: 'network' });
         await sleep(RETRY_MS * 2);
-        if (!this.destroyed) this._start();
+        if (!this.destroyed) this._start(again);
         return;
       }
       this._online(true);
@@ -153,7 +161,7 @@
           if (e.status === 403) {
             // Raum wurde (nach langer Abwesenheit) übernommen → neu anmelden
             this._online(false);
-            return this._start();
+            return this._start(true);
           }
           this._online(false);
           await sleep(RETRY_MS);
@@ -348,7 +356,7 @@
     // PeerJS-kompatibel: mit ID = Host, ohne ID = Spieler.
     // options (z. B. ICE/TURN der Verbindungshilfe) gelten nur für WebRTC; das Relay braucht sie nicht.
     createPeer(id, options) {
-      if (mode === 'relay') return id ? new RelayHostPeer(id.slice(J.peerId('').length)) : new RelayPlayerPeer();
+      if (mode === 'relay') return id ? new RelayHostPeer(id.slice(J.peerId('').length), options) : new RelayPlayerPeer();
       return id ? new Peer(id, options) : new Peer(options);
     },
   };
