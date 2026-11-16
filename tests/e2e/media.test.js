@@ -7,9 +7,9 @@ let env;
 test.before(async () => { env = await startEnv({ JEOP_BUZZ_DELAY_MS: 150 }); });
 test.after(async () => { await env.stop(); });
 
-// 2 s Stille als 8-kHz-WAV
+// 30 s Stille als 8-kHz-WAV (lang genug, dass der Clip unter Last nie von selbst endet)
 function wavDataUrl() {
-  const n = 16000;
+  const n = 240000;
   const b = Buffer.alloc(44 + n);
   b.write('RIFF', 0); b.writeUInt32LE(36 + n, 4); b.write('WAVEfmt ', 8);
   b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22);
@@ -49,14 +49,30 @@ for (const mode of ['single', 'team']) {
       assert.ok(await tv.evaluate(() => document.getElementById('tvMedia').paused), 'kein Autoplay');
     });
     await t.test('Play, Pause und Neustart wirken auf dem TV', async () => {
+      // Medien-Ereignisse mitschreiben: der Test wartet auf 'play'/'pause'/'seeked' selbst, nicht auf Momentwerte
+      await tv.evaluate(() => {
+        const el = document.getElementById('tvMedia');
+        const log = window.__mediaLog = [];
+        ['play', 'playing', 'pause', 'seeked'].forEach((type) => el.addEventListener(type, () => log.push(type)));
+      });
+      const seen = (type, from) => tv.waitForFunction(([ty, n]) => window.__mediaLog.slice(n).includes(ty), [type, from]);
+      const mark = () => tv.evaluate(() => window.__mediaLog.length);
+      let m = await mark();
       await host.click('#mediaPlay');
-      await tv.waitForFunction(() => !document.getElementById('tvMedia').paused);
+      await seen('playing', m);
+      assert.equal(await tv.evaluate(() => document.getElementById('tvMedia').paused), false);
+      m = await mark();
       await host.click('#mediaPlay');
-      await tv.waitForFunction(() => document.getElementById('tvMedia').paused);
+      await seen('pause', m);
+      assert.equal(await tv.evaluate(() => document.getElementById('tvMedia').paused), true);
+      m = await mark();
       await host.click('#mediaPlay');
+      await seen('playing', m);
       await tv.waitForFunction(() => document.getElementById('tvMedia').currentTime > 0.2);
+      m = await mark();
       await host.click('#mediaRestart');
-      await tv.waitForFunction(() => document.getElementById('tvMedia').currentTime < 0.2 && !document.getElementById('tvMedia').paused);
+      await seen('seeked', m); // Sprung auf 0 kam an
+      await tv.waitForFunction(() => !document.getElementById('tvMedia').paused);
       await host.click('#mediaMute');
       assert.ok(await host.evaluate(() => document.getElementById('hostMedia').muted));
     });
