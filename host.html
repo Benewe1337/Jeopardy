@@ -94,6 +94,13 @@
           <button class="small ghost" id="resetGame">Spielstand zurücksetzen</button>
           <button class="small ghost" id="newCode">Neuer Raumcode</button>
         </div>
+        <div class="btn-row" id="fileRow">
+          <button class="small" id="exportGame">Spielstand exportieren</button>
+          <button class="small" id="importGame">Spielstand importieren</button>
+          <label class="inline-check"><input type="checkbox" id="exportSet" checked> mit Fragenset</label>
+          <input type="file" id="importFile" accept=".json,application/json" hidden>
+        </div>
+        <p class="hint" id="fileMsg" role="status">Die Spielstand-Datei enthält die Antworten – nicht an Spieler weitergeben.</p>
         <p class="hint">Änderungen im Editor-Tab werden sofort übernommen.</p>
         <details class="turn-box" id="gameBox" hidden></details>
         <details class="turn-box" id="turnBox">

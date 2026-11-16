@@ -1567,3 +1567,7 @@ body.tv .buzz-area, body.tv .react-bar { display: none !important; }
 .ro-card h2 { margin: 0; font-size: 20px; }
 .readonly-bar { position: fixed; left: 0; right: 0; top: 0; z-index: 39; display: flex; gap: 12px; align-items: center; justify-content: center; padding: 8px 12px; background: #b45309; color: #fff; font-weight: 600; }
 body.readonly .host-page { filter: grayscale(.6); }
+
+/* Spielstand als Datei */
+.inline-check { display: inline-flex; gap: 6px; align-items: center; font-size: 14px; }
+#fileMsg.error { color: var(--bad, #e5484d); }

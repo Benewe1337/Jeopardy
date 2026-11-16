@@ -815,6 +815,54 @@
       state.personStats = {};
     });
   });
+  // ---------- Spielstand als Datei ----------
+  const fileMsg = (text, bad) => { $('fileMsg').textContent = text; $('fileMsg').classList.toggle('error', !!bad); };
+  $('exportGame').addEventListener('click', () => {
+    let setRef = null;
+    try { const id = localStorage.getItem('jeopardy.activeSet'); if (id) setRef = { id }; } catch (e) {}
+    const snap = J.exportGame(state, set, { room: code, includeSet: $('exportSet').checked, setRef });
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const name = `jeopardy-${code}-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+    const url = URL.createObjectURL(new Blob([JSON.stringify(snap)], { type: 'application/json' }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: name });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    fileMsg(`Spielstand gespeichert: ${name}`);
+  });
+  $('importGame').addEventListener('click', () => $('importFile').click());
+  $('importFile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > J.MAX_GAME_FILE_BYTES) return fileMsg('Datei ist zu groß (maximal 8 MB).', true);
+    let text;
+    try { text = await file.text(); } catch (err) { return fileMsg('Datei konnte nicht gelesen werden.', true); }
+    const res = J.parseGame(text, file.size);
+    if (!res.ok) return fileMsg(res.error, true);
+    const snap = res.snapshot;
+    const running = state.players.length || state.used.some((r) => r.some((c) => c.some(Boolean)));
+    const when = snap.savedAt ? new Date(snap.savedAt).toLocaleString('de-DE') : 'unbekannt';
+    const msg = `Spielstand aus der Datei laden?\n\nGespeichert: ${when}\nRunde ${snap.state.round + 1}, ${snap.state.players.length} Spieler`
+      + (snap.set ? `\nFragenset: ${snap.set.title || 'ohne Titel'} (wird ersetzt)` : '')
+      + (running ? '\n\nACHTUNG: Das laufende Spiel wird überschrieben (nicht rückgängig zu machen).' : '')
+      + (snap.room && snap.room !== code ? `\n\nRaumcode wird ${snap.room}; Spieler öffnen den neuen Link.` : '');
+    if (!confirm(msg)) return fileMsg('Import abgebrochen.');
+    stopIntro(false);
+    pendingBuzz = null;
+    state = snap.state;
+    if (snap.set) set = snap.set;
+    gameRoom = snap.room || code;
+    J.saveState(state);
+    if (snap.set) J.saveSet(snap.set);
+    try { localStorage.setItem(J.ROOM_KEY, gameRoom); } catch (err) {}
+    // Relay: Spielstand auf dem Server durchsetzen, bevor die Seite neu lädt
+    try { await J.gameSync.keepLocal(gameRoom); J.gameSync.touch(); } catch (err) {}
+    fileMsg('Spielstand geladen – Seite lädt neu…');
+    setTimeout(() => location.reload(), J.gameSync.status.kind === 'ok' ? 1800 : 200);
+  });
   $('newCode').addEventListener('click', () => {
     if (!confirm('Neuen Raumcode erzeugen? Spieler müssen den neuen Link öffnen.')) return;
     J.newRoomCode();
@@ -863,7 +911,8 @@
   const joinUrl = J.joinUrl(location.href, code, turn);
   const peerOptions = () => ({ config: J.iceConfig(turn, window.JEOP_FORCE_RELAY) });
   // Spielstand-Sicherung (Relay): liefert dem Sync den aktuellen Stand
-  J.gameSync.attach(() => ({ room: code, state, set }));
+  let gameRoom = code; // beim Import einer Datei kann der Raumcode wechseln
+  J.gameSync.attach(() => ({ room: gameRoom, state, set }));
   J.gameSync.onStatus((s) => { if (s.kind === 'readonly' && peer && !peer.destroyed) peer.destroy(); });
   $('code').textContent = code;
   $('link').textContent = joinUrl;
