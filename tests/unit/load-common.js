@@ -6,6 +6,7 @@ const vm = require('vm');
 
 const SRC = fs.readFileSync(path.join(__dirname, '../../js/common.js'), 'utf8');
 
+const STATS = fs.readFileSync(path.join(__dirname, '../../js/stats.js'), 'utf8');
 const FINALE = fs.readFileSync(path.join(__dirname, '../../js/finale.js'), 'utf8');
 const DD = fs.readFileSync(path.join(__dirname, '../../js/dd.js'), 'utf8');
 
@@ -23,6 +24,7 @@ function loadCommon() {
   vm.runInContext(SRC, context, { filename: 'common.js' });
   vm.runInContext(FINALE, context, { filename: 'finale.js' });
   vm.runInContext(DD, context, { filename: 'dd.js' });
+  vm.runInContext(STATS, context, { filename: 'stats.js' });
   return { J: window.J, localStorage, document };
 }
 

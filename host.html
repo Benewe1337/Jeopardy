@@ -142,7 +142,13 @@
   <div class="finish" id="finish">
     <div class="finish-inner">
       <div id="podium"></div>
-      <button class="primary" id="finishBack">Zurück zum Spiel</button>
+      <div id="statsBox" hidden></div>
+      <div class="finish-actions">
+        <button id="statsToggle">📊 Statistik</button>
+        <button id="exportCsv">⬇ CSV</button>
+        <button id="exportJson">⬇ JSON</button>
+        <button class="primary" id="finishBack">Zurück zum Spiel</button>
+      </div>
     </div>
   </div>
 
@@ -155,6 +161,7 @@
   <script src="js/gameui.js"></script>
   <script src="js/finale.js"></script>
   <script src="js/dd.js"></script>
+  <script src="js/stats.js"></script>
   <script src="js/finale-host.js"></script>
   <script src="js/host.js"></script>
 </body>

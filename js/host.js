@@ -160,9 +160,13 @@
   const openBuzz = () => ({ open: true, winner: null, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5) });
   const closedBuzz = () => ({ open: false, winner: null });
 
-  function stat(pid) {
+  // Statistik zur aktuellen Frage erfassen (Kategorie, Joker, Klauen) – siehe js/stats.js
+  function recordVerdict(pid, verdict, stolen) {
     if (!state.stats) state.stats = {};
-    return state.stats[pid] || (state.stats[pid] = { right: 0, wrong: 0, buzzWins: 0, steals: 0 });
+    const cur = state.current;
+    J.stats.recordVerdict(state.stats, pid, verdict, {
+      cat: set.rounds[cur.round].categories[cur.cat].name, stolen, jokers: cur.jokers,
+    });
   }
 
   // Fairer Buzzer: Jedes Handy misst die Reaktionszeit ab dem Moment, in dem der Knopf dort
@@ -253,12 +257,12 @@
       winners.forEach((id) => {
         state.players.find((p) => p.id === id).score += value;
         cur.judged[id] = 'right';
-        stat(id).right++;
+        recordVerdict(id, 'right', false);
       });
       losers.forEach((id) => {
         state.players.find((p) => p.id === id).score -= penalty;
         cur.judged[id] = 'wrong';
-        stat(id).wrong++;
+        recordVerdict(id, 'wrong', false);
       });
       cur.revealed = true;
       cur.timer = null;
@@ -462,6 +466,8 @@
     const label = kind === 'pass' ? `👉 ${who} gibt weiter an ${nameOf(target)}` : `${info.icon} ${who}: ${info.name}`;
     mutate(label, () => {
       p.usedJokers = [...(p.usedJokers || []), kind];
+      if (!state.stats) state.stats = {};
+      J.stats.recordJoker(state.stats, pid, kind);
       const jk = cur.jokers || (cur.jokers = {});
       if (kind === 'pass') jk.pass = { from: pid, to: target, by: who };
       else jk[kind] = [...(jk[kind] || []), pid];
@@ -491,13 +497,10 @@
     mutate(`⚡ ${whoBuzzed(buzz)} buzzert (${J.fmtMs(best.ms)})`, () => {
       cur.buzz = buzz;
       cur.timer = null;
-      stat(best.id).buzzWins++;
-      if (isTeam() && best.name) {
-        const key = best.id + ':' + best.name;
-        const ps = state.personStats || (state.personStats = {});
-        const entry = ps[key] || (ps[key] = { name: best.name, team: nameOf(best.id), buzzWins: 0 });
-        entry.buzzWins++;
-      }
+      if (!state.stats) state.stats = {};
+      if (!state.personStats) state.personStats = {};
+      J.stats.recordBuzz(state.stats, state.personStats, [...pb.entries].map(([id, e]) => [id, e.ms, e.name]),
+        best.id, isTeam(), nameOf);
     });
     sound('buzz');
   }
@@ -674,8 +677,7 @@
         mutate(`${p.name} richtig (+${gain}${stolen ? ', geklaut' : ''})`, () => {
           p.score += gain;
           state.current.judged[p.id] = 'right';
-          stat(p.id).right++;
-          if (stolen) stat(p.id).steals = (stat(p.id).steals || 0) + 1;
+          recordVerdict(p.id, 'right', stolen);
           state.current.buzz = closedBuzz();
           state.current.timer = null;
           state.current.revealed = true;
@@ -692,7 +694,7 @@
         mutate(`${p.name} falsch (−${penalty})`, () => {
           p.score -= penalty;
           state.current.judged[p.id] = 'wrong';
-          stat(p.id).wrong++;
+          recordVerdict(p.id, 'wrong', false);
           state.current.timer = null;
           // Klauen: Buzzer öffnet für alle, die noch nicht gewertet wurden
           opened = unjudged().length > 0;
@@ -896,17 +898,37 @@
     el.classList.toggle('show', !!state.finished);
     if (state.finished) {
       J.renderPodium($('podium'), state.players, set.title, state.stats, isTeam() ? state.personStats : null);
+      $('podium').hidden = !!state.statsShown;
+      $('statsBox').hidden = !state.statsShown;
+      $('statsToggle').textContent = state.statsShown ? '🏆 Siegerehrung' : '📊 Statistik';
+      if (state.statsShown) J.stats.renderStats($('statsBox'), statsSummary());
       if (!shownFinished) J.confetti(el);
     }
     shownFinished = !!state.finished;
   }
+  const statsSummary = () => J.stats.summarize(state.players, state.stats, state.personStats, state.mode);
+  $('statsToggle').addEventListener('click', () => { state.statsShown = !state.statsShown; commit(); });
+  function download(name, mime, text) {
+    const url = URL.createObjectURL(new Blob([text], { type: mime }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  const exportName = (ext) => `jeopardy-statistik-${new Date().toISOString().slice(0, 10)}.${ext}`;
+  // CSV mit BOM, damit Excel Umlaute richtig liest
+  $('exportCsv').addEventListener('click', () => download(exportName('csv'), 'text/csv;charset=utf-8', '\ufeff' + J.stats.toCsv(statsSummary())));
+  $('exportJson').addEventListener('click', () => download(exportName('json'), 'application/json', J.stats.toJson(statsSummary(), set.title)));
   $('finishBtn').addEventListener('click', () => {
     if (!state.players.length) { alert(isTeam() ? 'Es gibt noch keine Teams.' : 'Es gibt noch keine Spieler.'); return; }
-    mutate('🏆 Siegerehrung', () => { state.finished = true; state.current = null; });
+    mutate('🏆 Siegerehrung', () => { state.finished = true; state.statsShown = false; state.current = null; });
     sound('fanfare');
   });
   $('finishBack').addEventListener('click', () =>
-    mutate('Zurück zum Spiel', () => { state.finished = false; })
+    mutate('Zurück zum Spiel', () => { state.finished = false; state.statsShown = false; })
   );
   $('timerStop').addEventListener('click', stopTimer);
   function switchRound(r) {
@@ -980,6 +1002,7 @@
       state.round = 0;
       state.turn = state.players.length ? state.players[0].id : null;
       state.finished = false;
+      state.statsShown = false;
       state.stats = {};
       state.personStats = {};
       state.fj = null;

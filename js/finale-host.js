@@ -68,6 +68,8 @@
     api.mutate(`Final Jeopardy: ${p.name} ${verdict === 'right' ? 'richtig' : 'falsch'} (${delta > 0 ? '+' : ''}${delta})`, () => {
       p.score += delta;
       fj.done[p.id] = { answer: fj.answers[p.id] || '', wager, verdict, delta, score: p.score };
+      if (!st().stats) st().stats = {};
+      J.stats.recordFinal(st().stats, p.id, { wager, verdict, delta });
       fj.pending = null;
     });
     api.sound(verdict === 'right' ? 'right' : 'wrong');
