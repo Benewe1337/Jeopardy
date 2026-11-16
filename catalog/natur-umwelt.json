@@ -1,0 +1,41 @@
+{
+  "name": "Natur & Umwelt",
+  "level": "runde2",
+  "tags": [
+    "natur",
+    "geografie"
+  ],
+  "clues": [
+    {
+      "q": "Auf welchem Kontinent liegt die Wüste Sahara?",
+      "a": "Afrika",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Sahara"
+    },
+    {
+      "q": "Welcher ist der größte Ozean der Erde?",
+      "a": "Pazifik",
+      "img": "",
+      "note": "Auch 'Pazifischer Ozean' / 'Stiller Ozean'. Quelle: https://de.wikipedia.org/wiki/Pazifischer_Ozean"
+    },
+    {
+      "q": "Welches Gas ist hauptverantwortlich für den menschengemachten Treibhauseffekt?",
+      "a": "Kohlenstoffdioxid",
+      "img": "",
+      "note": "CO2. Quelle: https://de.wikipedia.org/wiki/Kohlenstoffdioxid"
+    },
+    {
+      "q": "Wie heißt das größte Korallenriff der Erde vor der Küste Australiens?",
+      "a": "Great Barrier Reef",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Great_Barrier_Reef"
+    },
+    {
+      "q": "Welche ist die größte Insel der Welt?",
+      "a": "Grönland | Neuguinea | Borneo | Madagaskar",
+      "img": "",
+      "note": "Multiple Choice. Australien zählt als Kontinent. Quelle: https://de.wikipedia.org/wiki/Grönland",
+      "kind": "choice"
+    }
+  ]
+}

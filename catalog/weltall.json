@@ -1,0 +1,40 @@
+{
+  "name": "Weltall",
+  "level": "runde1",
+  "tags": [
+    "wissenschaft",
+    "weltall"
+  ],
+  "clues": [
+    {
+      "q": "Wie heißt der Stern im Zentrum unseres Sonnensystems?",
+      "a": "Sonne",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Sonne"
+    },
+    {
+      "q": "Welcher ist der größte Planet unseres Sonnensystems?",
+      "a": "Jupiter",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Jupiter_(Planet)"
+    },
+    {
+      "q": "Wer betrat 1969 als erster Mensch den Mond?",
+      "a": "Neil Armstrong",
+      "img": "",
+      "note": "Apollo 11. Quelle: https://de.wikipedia.org/wiki/Neil_Armstrong"
+    },
+    {
+      "q": "Wie heißt die Galaxie, in der unsere Sonne liegt?",
+      "a": "Milchstraße",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Milchstraße"
+    },
+    {
+      "q": "Wie heißt der größte Mond des Saturn?",
+      "a": "Titan",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Titan_(Mond)"
+    }
+  ]
+}

@@ -9,7 +9,7 @@ OUT="${1:-_site}"
 
 # Erlaubnisliste: einzige Stelle, die festlegt, was veröffentlicht wird.
 FILES="index.html host.html player.html editor.html"
-DIRS="css js fonts vendor"
+DIRS="css js fonts vendor catalog"
 
 rm -rf "$OUT"
 mkdir -p "$OUT"

@@ -1,0 +1,40 @@
+{
+  "name": "Feste & Bräuche",
+  "level": "runde1",
+  "tags": [
+    "bräuche",
+    "alltag"
+  ],
+  "clues": [
+    {
+      "q": "Was versteckt der Osterhase?",
+      "a": "Eier",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Osterhase"
+    },
+    {
+      "q": "Wann feiert man Silvester?",
+      "a": "31. Dezember",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Silvester"
+    },
+    {
+      "q": "In welchem Monat beginnt das Münchner Oktoberfest traditionell?",
+      "a": "September",
+      "img": "",
+      "note": "Endet am ersten Oktoberwochenende. Quelle: https://de.wikipedia.org/wiki/Oktoberfest"
+    },
+    {
+      "q": "Welcher Heilige gilt als Vorbild für den Weihnachtsmann?",
+      "a": "Nikolaus von Myra",
+      "img": "",
+      "note": "Sinngemäß 'Sankt Nikolaus' reicht. Quelle: https://de.wikipedia.org/wiki/Nikolaus_von_Myra"
+    },
+    {
+      "q": "Wie heißt das jüdische Neujahrsfest?",
+      "a": "Rosch ha-Schana",
+      "img": "",
+      "note": "Schreibweisen variieren. Quelle: https://de.wikipedia.org/wiki/Rosch_ha-Schana"
+    }
+  ]
+}

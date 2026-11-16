@@ -1,0 +1,39 @@
+{
+  "name": "Literatur",
+  "level": "runde2",
+  "tags": [
+    "literatur"
+  ],
+  "clues": [
+    {
+      "q": "Wer schrieb 'Die Leiden des jungen Werthers'?",
+      "a": "Johann Wolfgang von Goethe",
+      "img": "",
+      "note": "Goethe reicht. Quelle: https://de.wikipedia.org/wiki/Die_Leiden_des_jungen_Werthers"
+    },
+    {
+      "q": "Welcher Autor erschuf Sherlock Holmes?",
+      "a": "Arthur Conan Doyle",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Arthur_Conan_Doyle"
+    },
+    {
+      "q": "Wer schrieb 'Die Verwandlung', in der Gregor Samsa zum Ungeziefer wird?",
+      "a": "Franz Kafka",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Die_Verwandlung"
+    },
+    {
+      "q": "Wer schrieb 'Die Blechtrommel'?",
+      "a": "Günter Grass",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Die_Blechtrommel"
+    },
+    {
+      "q": "Wer schrieb den Roman 'Der Name der Rose'?",
+      "a": "Umberto Eco",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Der_Name_der_Rose"
+    }
+  ]
+}

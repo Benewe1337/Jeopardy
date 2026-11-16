@@ -1,0 +1,40 @@
+{
+  "name": "Serien",
+  "level": "runde2",
+  "tags": [
+    "serien",
+    "popkultur"
+  ],
+  "clues": [
+    {
+      "q": "In welcher Serie leben Homer, Marge, Bart, Lisa und Maggie?",
+      "a": "Die Simpsons",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Die_Simpsons"
+    },
+    {
+      "q": "In welcher Serie wird ein Chemielehrer zum Drogenproduzenten?",
+      "a": "Breaking Bad",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Breaking_Bad"
+    },
+    {
+      "q": "Wie heißt die Fantasy-Serie nach den Romanen von George R. R. Martin?",
+      "a": "Game of Thrones",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Game_of_Thrones"
+    },
+    {
+      "q": "In welcher fiktiven Kleinstadt spielt 'Stranger Things'?",
+      "a": "Hawkins",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Stranger_Things"
+    },
+    {
+      "q": "Wie heißt die Papierfirma in der US-Version von 'The Office'?",
+      "a": "Dunder Mifflin",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/The_Office_(US-amerikanische_Fernsehserie)"
+    }
+  ]
+}

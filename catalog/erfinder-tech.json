@@ -1,0 +1,40 @@
+{
+  "name": "Erfinder & Tech",
+  "level": "runde1",
+  "tags": [
+    "technik",
+    "wissenschaft"
+  ],
+  "clues": [
+    {
+      "q": "Welche japanische Firma stellt die PlayStation her?",
+      "a": "Sony",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/PlayStation"
+    },
+    {
+      "q": "Wer erfand in Europa den Buchdruck mit beweglichen Lettern?",
+      "a": "Johannes Gutenberg",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Johannes_Gutenberg"
+    },
+    {
+      "q": "Welche Firma gründete Steve Jobs mit Steve Wozniak?",
+      "a": "Apple",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Apple"
+    },
+    {
+      "q": "Wer erfand das Dynamit?",
+      "a": "Alfred Nobel",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Alfred_Nobel"
+    },
+    {
+      "q": "Wer entdeckte 1928 das Penicillin?",
+      "a": "Alexander Fleming",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Alexander_Fleming"
+    }
+  ]
+}

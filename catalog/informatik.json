@@ -1,0 +1,40 @@
+{
+  "name": "Informatik",
+  "level": "runde2",
+  "tags": [
+    "informatik",
+    "technik"
+  ],
+  "clues": [
+    {
+      "q": "Wofür steht die Abkürzung USB?",
+      "a": "Universal Serial Bus",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Universal_Serial_Bus"
+    },
+    {
+      "q": "Welche Programmiersprache trägt den Namen einer Schlange?",
+      "a": "Python",
+      "img": "",
+      "note": "Name stammt eigentlich von Monty Python. Quelle: https://de.wikipedia.org/wiki/Python_(Programmiersprache)"
+    },
+    {
+      "q": "Wie viele Bit hat ein Byte?",
+      "a": "8",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Byte"
+    },
+    {
+      "q": "Wofür steht HTTP?",
+      "a": "Hypertext Transfer Protocol",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Hypertext_Transfer_Protocol"
+    },
+    {
+      "q": "Wie heißt das Versionsverwaltungssystem, das Linus Torvalds 2005 entwickelte?",
+      "a": "Git",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Git"
+    }
+  ]
+}

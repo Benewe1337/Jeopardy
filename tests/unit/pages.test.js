@@ -42,11 +42,11 @@ test('build-pages.sh veröffentlicht nur die Erlaubnisliste', () => {
     execFileSync(path.join(ROOT, 'scripts/build-pages.sh'), [out], { stdio: 'pipe' });
     const files = walk(out);
     for (const f of files) {
-      assert.ok(PAGES.includes(f) || /^(css|js|fonts|vendor)\//.test(f), `unerwartet veröffentlicht: ${f}`);
+      assert.ok(PAGES.includes(f) || /^(css|js|fonts|vendor|catalog)\//.test(f), `unerwartet veröffentlicht: ${f}`);
     }
     // Alles, was zur Laufzeit gebraucht wird, ist dabei
     for (const f of [...PAGES, 'css/style.css', 'js/common.js', 'js/net.js', 'js/host.js', 'js/player.js',
-      'js/editor.js', 'js/sets.js', 'fonts/inter.woff2', 'vendor/peerjs.min.js']) {
+      'js/editor.js', 'js/sets.js', 'fonts/inter.woff2', 'vendor/peerjs.min.js', 'catalog/index.json']) {
       assert.ok(files.includes(f), `fehlt: ${f}`);
     }
     // Interne Dateien nie

@@ -1,0 +1,40 @@
+{
+  "name": "Klassische Musik",
+  "level": "runde2",
+  "tags": [
+    "musik",
+    "klassik"
+  ],
+  "clues": [
+    {
+      "q": "Welcher berühmte Komponist wurde im Laufe seines Lebens fast völlig taub?",
+      "a": "Ludwig van Beethoven",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Ludwig_van_Beethoven"
+    },
+    {
+      "q": "Welcher Komponist schrieb die Oper 'Die Zauberflöte'?",
+      "a": "Wolfgang Amadeus Mozart",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Die_Zauberflöte"
+    },
+    {
+      "q": "Wer komponierte 'Die vier Jahreszeiten'?",
+      "a": "Antonio Vivaldi",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Die_vier_Jahreszeiten_(Vivaldi)"
+    },
+    {
+      "q": "Wie heißt Tschaikowskis Ballett um eine Weihnachtsfigur aus Holz?",
+      "a": "Der Nussknacker",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Der_Nussknacker_(Ballett)"
+    },
+    {
+      "q": "Wer komponierte den 'Boléro'?",
+      "a": "Maurice Ravel",
+      "img": "",
+      "note": "Quelle: https://de.wikipedia.org/wiki/Boléro"
+    }
+  ]
+}
