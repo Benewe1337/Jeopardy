@@ -76,7 +76,10 @@ test('Spiel fortsetzen auf einem neuen Gerät: Stand identisch, Spieler verbinde
     await resumed(host2, code);
     assert.deepEqual(await snapshot(host2), before, 'Punkte, Felder, Runde, Zug und Raumcode identisch');
     await host2.waitForFunction(() => document.getElementById('viewers').textContent === '1 verbunden', null, { timeout: 40000 });
-    assert.equal(await scoresOf(anna), before.scores.split(',').map((x) => x.split(':')[1]).join(','), 'Spieler sieht die alten Punkte');
+    // Der Stand kommt nach dem Wiederverbinden per Nachricht beim Handy an: darauf warten, nicht einmalig lesen
+    const oldScores = before.scores.split(',').map((x) => x.split(':')[1]).join(',');
+    await anna.waitForFunction((want) => [...document.querySelectorAll('#scores .score-value')].map((e) => e.textContent).join(',') === want, oldScores);
+    assert.equal(await scoresOf(anna), oldScores, 'Spieler sieht die alten Punkte');
     // Spiel geht normal weiter
     await playCell(host2, 2);
     await anna.waitForFunction((n) => document.querySelectorAll('#scores .score-value')[0].textContent !== n, before.scores.split(',')[0].split(':')[1]);
