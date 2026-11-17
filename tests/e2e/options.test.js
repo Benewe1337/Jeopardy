@@ -143,7 +143,8 @@ test('Joker einzeln und alle aus: keine Knöpfe, Host ignoriert Nachrichten', as
   // Tipp aus
   await setOpt(host, 'jokerHint', false);
   await host.locator('.cell.val').nth(0).click();
-  await anna.waitForSelector('.joker[data-kind="double"]');
+  // Die Leiste der vorigen Frage kann noch stehen: auf den neuen Stand (ohne Tipp) warten
+  await anna.waitForFunction(() => document.querySelector('.joker[data-kind="double"]') && !document.querySelector('.joker[data-kind="hint"]'));
   assert.equal(await anna.locator('.joker[data-kind="hint"]').count(), 0);
   assert.equal(await anna.locator('.joker').count(), 2);
   await sendRaw(anna, { type: 'joker', kind: 'hint' });
@@ -158,7 +159,7 @@ test('Joker einzeln und alle aus: keine Knöpfe, Host ignoriert Nachrichten', as
   await setOpt(host, 'jokerPass', false);
   await host.locator('.cell.val').nth(0).click();
   await anna.waitForSelector('#overlay.show');
-  await anna.waitForTimeout(300);
+  await anna.waitForFunction(() => !document.querySelector('.joker') && document.getElementById('jokerBar').hidden);
   assert.equal(await anna.locator('#jokerBar').isHidden(), true, 'keine Joker-Leiste');
   assert.equal(await anna.locator('.joker').count(), 0);
   await sendRaw(anna, { type: 'joker', kind: 'double' });
@@ -254,9 +255,8 @@ test('Penalty auch für Multiple Choice: Spieler sehen den Abzug', async () => {
   await host.click('#cancel');
   await setOpt(host, 'penalty', 'none');
   await host.locator('.cell.val').nth(0).click();
-  await anna.waitForSelector('.special-status');
-  await anna.waitForFunction(() => (document.querySelector('.special-status')?.textContent || '').includes('gewählt'));
-  assert.ok(!(await anna.textContent('.special-status')).includes('Falsch kostet'));
+  // Der alte Status (Abzug an) kann noch im DOM stehen, bis der neue Stand per Relay ankommt: auf den neuen warten
+  await anna.waitForFunction(() => { const t = document.querySelector('.special-status')?.textContent || ''; return t.includes('gewählt') && !t.includes('Falsch kostet'); });
   assert.deepEqual(env.errors, []);
 });
 
