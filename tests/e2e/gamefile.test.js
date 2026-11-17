@@ -35,6 +35,8 @@ test('Export mitten im Spiel, Zurücksetzen, Import: Stand und Spieleransicht id
   await playCell(host, 1);
   await host.waitForFunction(() => J.loadState().players[0].score === 200);
   const before = await stateOf(host);
+  // Der Stand kommt per Nachricht beim Handy an: darauf warten, nicht einmalig lesen (sonst „100,0“ statt „200,0“)
+  await anna.waitForFunction(() => [...document.querySelectorAll('#scores .score-value')][0]?.textContent === '200');
   const playerBefore = await scoresOf(anna);
   const file = await exportFile(host, dir);
 
