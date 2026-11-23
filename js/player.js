@@ -689,7 +689,7 @@
     const cur = last && last.current;
     const buzzer = $('buzzer');
     const info = $('buzzInfo');
-    if (!cur) { buzzer.hidden = true; info.hidden = true; return; }
+    if (!cur) { buzzer.hidden = true; info.hidden = true; $('splitInfo').hidden = true; return; }
     const buzz = cur.buzz || {};
     const judged = cur.judged || {};
     const isPlayer = !!myPlayer();
@@ -743,7 +743,7 @@
     } else if (locked) {
       text = 'Zu früh gedrückt – kurz gesperrt';
     } else if (canBuzz && Object.values(judged).includes('wrong')) {
-      text = `Klauen bringt +${last.opts && last.opts.stealHalf === false ? cur.value : cur.value / 2}`;
+      text = `Klauen bringt +${J.splitPoints(last.round, cur.row, { opts: last.opts || {}, stolen: true }).gain}`;
     } else if (canBuzz && cur.pixel) {
       text = 'Erkannt? Wer zuerst buzzert, darf antworten';
     } else if (buzz.open && isPlayer && judged[me]) {
@@ -753,6 +753,11 @@
     }
     info.textContent = text;
     info.hidden = !text;
+    // Punkteverteilung: eine Zeile, nur wenn eingeschaltet und vom Standard abweichend
+    const sline = J.splitLine(last.opts, last.round, cur.row, cur.kind);
+    const sbox = $('splitInfo');
+    sbox.textContent = sline;
+    sbox.hidden = !sline || !!cur.dd;
     info.classList.toggle('mine', buzz.winner === me);
   }
 

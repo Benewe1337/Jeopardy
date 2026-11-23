@@ -23,6 +23,7 @@ test('Standard: ohne Optionen verhält sich alles wie bisher', () => {
     steal: true, stealHalf: true, penalty: 'half', abstainPenalty: false, turn: true,
     pixelRace: true, timer: true, timerSec: '15', intro: true, reactions: true, qrTv: true, media: true,
     stats: true, awards: true, soundDefault: true, backup: true,
+    splitScoring: false, turnShare: '100', otherShare: '100', otherPenalty: 'same', estimateRunnerUp: '0', stealShare: '50',
   });
   assert.equal(J.penaltyFor(0, 2), 150);
   assert.equal(J.stealFor(0, 2), 150);
