@@ -435,3 +435,14 @@ test('newRoomCode/newDeviceId nutzen Crypto', () => {
   assert.match(a, /^[0-9a-f]{32}$/);
   assert.notEqual(a, b);
 });
+
+test('rateBucket: Burst bis cap, danach Nachfüllen mit perSec', () => {
+  let t = 0;
+  const b = J.rateBucket(3, 2, () => t);
+  assert.deepEqual([b.take(), b.take(), b.take(), b.take()], [true, true, true, false]);
+  t = 500; // +1 Token
+  assert.equal(b.take(), true);
+  assert.equal(b.take(), false);
+  t = 60_000; // nie über cap
+  assert.deepEqual([b.take(), b.take(), b.take(), b.take()], [true, true, true, false]);
+});

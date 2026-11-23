@@ -1445,8 +1445,25 @@
     return { ok: true, snapshot: { format: GAME_FORMAT, v: GAME_VERSION, app: String(data.app || '').slice(0, 40), room, savedAt, state, set, setRef: ref } };
   }
 
+  // Token bucket: `cap` bursts, refilled at `perSec`. take() returns false when empty.
+  // Used by the host to throttle each connection so a flooding client can't hog the host.
+  function rateBucket(cap, perSec, now = Date.now) {
+    let tokens = cap;
+    let last = now();
+    return {
+      take(cost = 1) {
+        const t = now();
+        tokens = Math.min(cap, tokens + ((t - last) / 1000) * perSec);
+        last = t;
+        if (tokens < cost) return false;
+        tokens -= cost;
+        return true;
+      },
+    };
+  }
+
   window.J = {
-    copyCategories, mixSets, parseSetFile, pickCategory, MAX_SET_FILE_BYTES,
+    rateBucket, copyCategories, mixSets, parseSetFile, pickCategory, MAX_SET_FILE_BYTES,
     safeMedia, mediaTypeOf, mediaFileError, MEDIA_LIMITS,
     PIXEL_STEPS, ZOOM_STEPS, imgSteps, imgMode, pixelLevel, pixelate, zoomCrop,
     CLUE_KINDS, isSpecialKind, parseNumber, estimateWinners, estimateRunnerUps, orderItems, shufflePerm, randomPerm, isPerm, orderCorrect, JOKERS, jokerInfo, jokerEnabled, activeJokers, jokerBlock, OPTION_DEFS, opt, effectiveOptions, cleanOptions, optionsLocked, whoIsUp, hintPattern, judgePoints, splitPoints, splitLine, optDefault,

@@ -1262,8 +1262,28 @@
   // Platz -> Geräte-ID des ersten Besitzers (Einzelspieler-Modus): ohne dieselbe ID kein Übernehmen
   const seatDevice = new Map();
 
+  // Per-connection flood protection (token buckets, host side, same for WebRTC and relay).
+  // Gameplay messages (buzz, answers, reactions, finale) get a generous budget, everything else
+  // (hello, unknown types) a small one. Over budget → dropped; a connection that keeps hammering
+  // past FLOOD_CLOSE_AFTER dropped messages is closed.
+  const GAMEPLAY_TYPES = new Set(['buzz', 'joker', 'estimate', 'order', 'choice', 'ddwager', 'react', 'fjwager', 'fjanswer']);
+  const FLOOD_CLOSE_AFTER = 200;
+  const MAX_CONNS = 60;
+  function floodOk(conn, msg) {
+    conn.bucketPlay = conn.bucketPlay || J.rateBucket(30, 6);
+    conn.bucketOther = conn.bucketOther || J.rateBucket(6, 0.5);
+    const ok = (GAMEPLAY_TYPES.has(msg.type) ? conn.bucketPlay : conn.bucketOther).take();
+    if (ok) return true;
+    conn.dropped = (conn.dropped || 0) + 1;
+    if (conn.dropped >= FLOOD_CLOSE_AFTER) {
+      try { conn.close(); } catch (e) {}
+    }
+    return false;
+  }
+
   function onData(conn, msg) {
     if (!msg || typeof msg !== 'object') return;
+    if (!floodOk(conn, msg)) return;
     if (msg.type === 'hello') {
       const pid = typeof msg.playerId === 'string' ? msg.playerId : null;
       conn.deviceId = typeof msg.deviceId === 'string' ? msg.deviceId : null;
@@ -1376,7 +1396,19 @@
     broadcast();
   }
 
+  // The first broadcast goes out at once; further requests inside BROADCAST_GAP_MS are merged into
+  // one trailing broadcast, so a flood of messages can't trigger one full-state rebuild each.
+  const BROADCAST_GAP_MS = 120;
+  let lastBroadcast = 0;
+  let broadcastTimer = null;
   function broadcast() {
+    if (broadcastTimer) return;
+    const wait = lastBroadcast + BROADCAST_GAP_MS - Date.now();
+    if (wait > 0) {
+      broadcastTimer = setTimeout(() => { broadcastTimer = null; broadcast(); }, wait);
+      return;
+    }
+    lastBroadcast = Date.now();
     const msg = message();
     conns.forEach((c) => { if (c.open) c.send(msg); });
   }
@@ -1395,6 +1427,7 @@
         return;
       }
       conn.on('open', () => {
+        if (conns.size >= MAX_CONNS) { try { conn.close(); } catch (e) {} return; }
         conns.add(conn);
         updateViewers();
         conn.send(message());
