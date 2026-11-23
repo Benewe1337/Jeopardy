@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
 let gate, signSession, verifySession, safeNext, COOKIE, memoryThrottle;
 test.before(async () => {
   ({ gate, signSession, verifySession, safeNext, COOKIE } = await import('../../middleware.js'));
-  ({ memoryThrottle } = await import('../../lib/throttle.mjs'));
+  ({ memoryThrottle } = await import('../../lib/throttle.cjs'));
 });
 
 const PW = 'geheim';

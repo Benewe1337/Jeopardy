@@ -1,7 +1,7 @@
 // Vercel Function: Fragensets speichern und laden (siehe lib/sets-core.mjs).
 // Braucht DATABASE_URL/POSTGRES_URL (Neon) und JEOPARDY_HOST_PASSWORD.
 import { neon } from '@neondatabase/serverless';
-import { pgThrottle } from '../lib/throttle.mjs';
+import { pgThrottle } from '../lib/throttle.cjs';
 import { handleSets, pgSetStore } from '../lib/sets-core.mjs';
 
 const url = process.env.DATABASE_URL || process.env.POSTGRES_URL;

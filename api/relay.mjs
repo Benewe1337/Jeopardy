@@ -1,6 +1,6 @@
 // Vercel Function: message relay between host and players (see lib/relay-core.mjs).
 import { neon } from '@neondatabase/serverless';
-import { pgThrottle } from '../lib/throttle.mjs';
+import { pgThrottle } from '../lib/throttle.cjs';
 import { handleRelay } from '../lib/relay-core.mjs';
 import { pgStore } from '../lib/relay-stores.mjs';
 

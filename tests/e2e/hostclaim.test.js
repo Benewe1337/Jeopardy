@@ -53,7 +53,7 @@ test('Übernahme mit Host-Passwort klappt, das alte Fenster zeigt „Raum wurde 
 
 test('Login: richtiges Passwort geht, nach 5 Fehlversuchen kommt 429 mit Retry-After', async () => {
   const { gate, verifySession, COOKIE } = await import('../../middleware.js');
-  const { memoryThrottle } = await import('../../lib/throttle.mjs');
+  const { memoryThrottle } = await import('../../lib/throttle.cjs');
   const throttle = memoryThrottle();
   const srv = http.createServer(async (req, res) => {
     const chunks = [];
