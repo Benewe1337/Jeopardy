@@ -637,6 +637,18 @@
   const LOCK_MS = 1000;
   const MIN_REACTION_MS = 100;
   const isEarly = (reactionMs) => !(reactionMs >= MIN_REACTION_MS);
+  // Buzzer-Zeit absichern: Der Wert des Handys ist nur ein Hinweis. Er kann nie größer sein als die
+  // am Host gemessene Zeit seit dem Öffnen (Reaktion + Netzwege), und nie unter der Frühstart-Grenze.
+  // Außerhalb davon zählt die am Host gemessene Zeit (hostMs = null: nicht messbar, Hinweis gilt).
+  const clampReaction = (clientMs, hostMs) => {
+    const c = Number(clientMs);
+    const h = Number(hostMs);
+    const hostOk = hostMs != null && Number.isFinite(h);
+    if (Number.isFinite(c) && !isEarly(c) && (!hostOk || c <= h)) return Math.min(60000, Math.round(c));
+    if (!hostOk) return null;
+    const r = Math.min(60000, Math.round(h));
+    return isEarly(r) ? null : r;
+  };
 
   // Schnellste gültige Reaktion gewinnt. entries: [[id, ms, name?], ...]
   function pickBuzzWinner(entries) {
@@ -750,10 +762,20 @@
     }
     return code;
   }
+  // Zufallsbytes aus dem Browser-Crypto (kein Math.random); ohne Crypto gibt es keinen Raum
+  function cryptoBytes(n) {
+    const c = (typeof crypto !== 'undefined' && crypto) || (typeof window !== 'undefined' && window.crypto);
+    if (!c || !c.getRandomValues) throw new Error('crypto.getRandomValues nicht verfügbar');
+    return c.getRandomValues(new Uint8Array(n));
+  }
+  // Geräte-ID: 128 Bit, hex
+  const newDeviceId = () => Array.from(cryptoBytes(16), (b) => b.toString(16).padStart(2, '0')).join('');
   function newRoomCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     let code = '';
-    for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    // 32 Zeichen teilen 256 ohne Rest: kein Modulo-Bias
+    const bytes = cryptoBytes(6);
+    for (let i = 0; i < 6; i++) code += chars[bytes[i] % chars.length];
     try { localStorage.setItem(ROOM_KEY, code); } catch (e) {}
     return code;
   }
@@ -1413,13 +1435,13 @@
     pointsFor, defaultSet, normalizeSet, defaultState,
     loadSet, saveSet, loadState, normalizeState, saveState,
     exportGame, parseGame, MAX_GAME_FILE_BYTES,
-    roomCode, newRoomCode, ROOM_KEY, peerId, publicState, escapeHtml, safeColor, safeNum, renderScores,
+    roomCode, newRoomCode, newDeviceId, ROOM_KEY, peerId, publicState, escapeHtml, safeColor, safeNum, renderScores,
     THEMES, getTheme, applyTheme, setTheme,
     penaltyFor, stealFor, sfx, startTimerMusic, stopTimerMusic, timerMusicOn, soundOn, setSoundOn, setSoundDefault, unlockAudio, audioUnlocked, renderTimer,
     TIMER_MS: 15000,
     safeImg, compressImage, renderTurn, renderPodium, confetti, ranking,
     renderIntro, introCellClass,
-    nextTurn, turnAfterRemoval, LOCK_MS, MIN_REACTION_MS, isEarly, pickBuzzWinner,
+    nextTurn, turnAfterRemoval, LOCK_MS, MIN_REACTION_MS, isEarly, clampReaction, pickBuzzWinner,
     clampTeamSize, teamIsFull, teamColor, cleanName,
     DEFAULT_ICE, parseTurn, iceConfig, encodeTurn, decodeTurn, joinUrl, loadTurn, saveTurn, scoreDelta,
     fmtMs, awards, REACTIONS, showReaction, BUZZ_WINDOW_MS: 400,

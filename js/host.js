@@ -163,7 +163,13 @@
   }
 
   // Neue Buzzer-Runde mit eigener ID, damit verspätete Buzzes aus einer älteren Runde nicht zählen
-  const openBuzz = () => ({ open: true, winner: null, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5) });
+  // Der Host merkt sich, wann er den Buzzer geöffnet hat: die Reaktionszeit vom Handy ist nur ein Hinweis
+  let buzzOpenedAt = null; // { id, t } (performance.now())
+  const openBuzz = () => {
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    buzzOpenedAt = { id, t: performance.now() };
+    return { open: true, winner: null, id };
+  };
   const closedBuzz = () => ({ open: false, winner: null });
 
   // Statistik zur aktuellen Frage erfassen (Kategorie, Joker, Klauen) – siehe js/stats.js
@@ -185,10 +191,11 @@
     if (!cur || !cur.buzz || !cur.buzz.open || !pid) return;
     if (msg.id !== cur.buzz.id) return;
     if (!state.players.some((p) => p.id === pid) || (cur.judged || {})[pid]) return;
-    let reaction = Number(msg.reaction);
-    if (!Number.isFinite(reaction)) return;
-    reaction = Math.min(60000, Math.round(reaction));
-    if (J.isEarly(reaction)) return; // unmenschlich schnell = Frühstart, zählt nicht
+    // Handy-Wert nur, wenn er physikalisch möglich ist (<= am Host gemessene Zeit seit dem Öffnen,
+    // >= Frühstart-Grenze); sonst zählt die am Host gemessene Zeit
+    const hostMs = buzzOpenedAt && buzzOpenedAt.id === cur.buzz.id ? performance.now() - buzzOpenedAt.t : null;
+    const reaction = J.clampReaction(msg.reaction, hostMs);
+    if (reaction == null) return;
     if (!pendingBuzz || pendingBuzz.id !== cur.buzz.id) {
       pendingBuzz = { id: cur.buzz.id, entries: new Map() };
       setTimeout(decideBuzz, window.JEOP_BUZZ_WINDOW_MS || (J.net.mode === 'relay' ? J.BUZZ_WINDOW_RELAY_MS : J.BUZZ_WINDOW_MS));
@@ -777,6 +784,18 @@
           if (confirm(q)) releasePlayer(p.id);
         });
         name.prepend(dev);
+      } else if (seatDevice.has(p.id)) {
+        // Gerät weg, Platz bleibt für dessen ID reserviert – der Host kann ihn freigeben
+        const lock = document.createElement('span');
+        lock.className = 'seatlock';
+        lock.textContent = '🔒';
+        lock.title = 'Platz ist für das getrennte Gerät reserviert – klicken zum Freigeben';
+        lock.style.cursor = 'pointer';
+        lock.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`Platz von ${p.name} für andere Geräte freigeben?`)) releasePlayer(p.id);
+        });
+        name.prepend(lock);
       }
       name.addEventListener('click', () => {
         const n = prompt('Neuer Name', p.name);
@@ -919,6 +938,7 @@
   function setMode(mode) {
     if (state.mode === mode) return;
     if (state.players.length && !confirm('Moduswechsel entfernt alle Spieler/Teams und setzt die Punkte zurück. (Rückgängig möglich)')) return;
+    seatDevice.clear();
     conns.forEach((c) => {
       if (c.playerId) { c.playerId = null; c.memberName = null; if (c.open) c.send({ type: 'released' }); }
     });
@@ -1239,6 +1259,9 @@
     return ids;
   }
 
+  // Platz -> Geräte-ID des ersten Besitzers (Einzelspieler-Modus): ohne dieselbe ID kein Übernehmen
+  const seatDevice = new Map();
+
   function onData(conn, msg) {
     if (!msg || typeof msg !== 'object') return;
     if (msg.type === 'hello') {
@@ -1261,6 +1284,11 @@
         } else {
           conn.memberName = J.cleanName(msg.name) || 'Spieler';
         }
+      } else if (ok && seatDevice.has(ok) && seatDevice.get(ok) !== conn.deviceId) {
+        // Der Platz gehört einem anderen Gerät (auch wenn dessen Verbindung gerade weg ist):
+        // nur dasselbe Gerät oder der Host (releasePlayer) darf ihn freigeben
+        ok = null;
+        conn.send({ type: 'taken', playerId: pid });
       } else if (ok) {
         // Jeder Name darf nur von einem Gerät belegt sein. Dasselbe Gerät (z. B. nach
         // Verbindungsabbruch) darf übernehmen, ein fremdes nicht.
@@ -1275,6 +1303,7 @@
           }
         }
       }
+      if (ok && !isTeam() && conn.deviceId) seatDevice.set(ok, conn.deviceId);
       conn.playerId = ok;
       conn.isTv = msg.tv === true;
       if (conn.isTv) JMedia.hostTvJoined(conn);
@@ -1335,6 +1364,7 @@
 
   // Host gibt einen Namen frei (z. B. wenn sich jemand verwählt hat)
   function releasePlayer(pid) {
+    seatDevice.delete(pid);
     conns.forEach((c) => {
       if (c.playerId === pid) {
         c.playerId = null;

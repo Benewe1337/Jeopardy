@@ -104,6 +104,8 @@ test('Buzzer-Ablauf mit drei Spielern', async (t) => {
     await freeze(cem);
     await anna.waitForSelector('#buzzer.live');
     await cem.waitForSelector('#buzzer.live');
+    // Der Host akzeptiert nur Zeiten, die seit dem Öffnen auch vergangen sein können: kurz echt warten
+    await host.waitForTimeout(1100);
     await anna.evaluate(() => window.__react(900));
     await cem.evaluate(() => window.__react(300));
     // Beide Drücke direkt hintereinander (ohne Playwrights Klick-Prüfungen, die unter Last lange dauern

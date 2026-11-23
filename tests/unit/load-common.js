@@ -19,7 +19,7 @@ function loadCommon() {
   };
   const document = { documentElement: { dataset: {} } };
   const window = { localStorage, document };
-  const context = { window, localStorage, document, console, URL, Date, Math, JSON, btoa, atob, escape, unescape };
+  const context = { window, crypto: require('crypto').webcrypto, localStorage, document, console, URL, Date, Math, JSON, btoa, atob, escape, unescape };
   vm.createContext(context);
   vm.runInContext(SRC, context, { filename: 'common.js' });
   vm.runInContext(FINALE, context, { filename: 'finale.js' });
