@@ -416,3 +416,22 @@ test('externalHost nennt den Host externer Links, nicht von Uploads', () => {
   assert.equal(J.externalHost(''), '');
   assert.equal(J.externalHost(null), '');
 });
+
+test('clampReaction: Handy-Wert nur wenn <= Host-Zeit und nicht zu früh', () => {
+  const { J } = loadCommon();
+  assert.equal(J.clampReaction(300, 800), 300);
+  assert.equal(J.clampReaction(1, 800), 800); // gefälscht winzig -> Host-Zeit
+  assert.equal(J.clampReaction(500, 300), 300); // schneller als physikalisch -> Host-Zeit
+  assert.equal(J.clampReaction('abc', 800), 800);
+  assert.equal(J.clampReaction(300, null), 300); // nicht messbar -> Hinweis gilt
+  assert.equal(J.clampReaction(1, null), null);
+  assert.equal(J.clampReaction(1, 2), null); // auch Host-Zeit unter der Frühstart-Grenze
+});
+
+test('newRoomCode/newDeviceId nutzen Crypto', () => {
+  const { J } = loadCommon();
+  assert.match(J.newRoomCode(), /^[A-HJ-NP-Z2-9]{6}$/);
+  const a = J.newDeviceId(); const b = J.newDeviceId();
+  assert.match(a, /^[0-9a-f]{32}$/);
+  assert.notEqual(a, b);
+});
