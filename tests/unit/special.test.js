@@ -114,3 +114,10 @@ test('Multiple Choice: gemischt, Lösung und Wahl erst nach dem Auflösen', () =
   assert.equal(pub.current.mc.correct, 1, 'angezeigte Position der richtigen Antwort');
   assert.deepEqual(plain(pub.current.mc.picks), { a: 1, b: 2 });
 });
+
+test('Option abstainPenalty: Standard aus, nur bool', () => {
+  assert.equal(J.opt(null, null, 'abstainPenalty'), false);
+  assert.equal(J.opt({ options: { abstainPenalty: true } }, null, 'abstainPenalty'), true);
+  assert.equal(J.opt({ options: { abstainPenalty: true } }, { options: { abstainPenalty: false } }, 'abstainPenalty'), false);
+  assert.deepEqual(JSON.parse(JSON.stringify(J.cleanOptions({ abstainPenalty: 'ja' }))), {});
+});

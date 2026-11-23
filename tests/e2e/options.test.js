@@ -331,3 +331,42 @@ test('Editor: Regeln im Set speichern, ausgeschaltete Funktionen verschwinden', 
   assert.equal(await page.isVisible('#fjEditor'), true);
   assert.deepEqual(env.errors, []);
 });
+
+test('Keine Abgabe bei Multiple Choice/Reihenfolge: aus = 0, an = wie falsch; Schätzfrage nie', async () => {
+  const { host, code } = await openHost(env, { names: ['Anna', 'Ben'] });
+  await useSet(host, `Object.assign(s.rounds[0].categories[0].clues[0], { kind: "choice", a: "Richtig | Falsch | Falsch2" });
+    Object.assign(s.rounds[0].categories[1].clues[0], { kind: "order", a: "A | B | C" });
+    Object.assign(s.rounds[0].categories[2].clues[0], { kind: "estimate", a: "42" });`);
+  const anna = await joinPlayer(env, code, { pick: 'Anna' });
+  await host.waitForFunction(() => document.querySelectorAll('#players .device').length === 1);
+  const scores = () => host.evaluate(() => J.loadState().players.map((p) => p.score).join(','));
+  // aus (Standard): Ben gibt nichts ab → 0
+  await host.locator('.cell.val').nth(0).click();
+  await anna.waitForSelector('.mc-opt');
+  await anna.click('.mc-opt:has-text("Richtig")');
+  await host.waitForFunction(() => document.getElementById('special').textContent.includes('✓ Richtig'));
+  assert.match(await host.textContent('#special .hint'), /keine Abgabe: 0/);
+  await host.click('#resolveBtn');
+  await host.waitForFunction(() => J.loadState().current.revealed);
+  assert.equal(await scores(), '100,0');
+  await host.click('#close');
+  await host.click('#resetGame');
+  await host.waitForSelector('#opt-abstainPenalty:not(:disabled)', { state: 'attached' });
+  // an: Ben zählt wie falsch (−50), Schätzfrage bleibt ohne Abzug
+  await setOpt(host, 'abstainPenalty', true);
+  await host.locator('.cell.val').nth(1).click(); // Kategorie 2 (Reihenfolge)
+  await anna.waitForSelector('#orderSend');
+  await anna.click('#orderSend');
+  await host.waitForFunction(() => document.getElementById('special').textContent.includes('abgegeben'));
+  assert.match(await host.textContent('#special .hint'), /auch ohne Abgabe|keine Abgabe: −50/);
+  await host.click('#resolveBtn');
+  await host.waitForFunction(() => J.loadState().current.revealed);
+  assert.equal(await scores(), '-50,-50', 'Anna falsch sortiert (gemischt abgegeben), Ben ohne Abgabe');
+  await host.click('#close');
+  await host.locator('.cell.val').nth(2).click();
+  await anna.waitForSelector('input');
+  await host.click('#resolveBtn');
+  await host.waitForFunction(() => J.loadState().current.revealed);
+  assert.equal(await scores(), '-50,-50', 'Schätzfrage: kein Abzug für Nicht-Tippende');
+  assert.deepEqual(env.errors, []);
+});

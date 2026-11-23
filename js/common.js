@@ -6,7 +6,7 @@
   const SET_KEY = 'jeopardy.set';
   // Bei jeder Änderung am Spiel-Code hochzählen: Handys mit anderem Stand laden sich dann neu,
   // statt z. B. neue Fragearten falsch anzuzeigen.
-  const APP_VERSION = '2026-11-16.5';
+  const APP_VERSION = '2026-11-23.1';
   const STATE_KEY = 'jeopardy.state';
   const ROOM_KEY = 'jeopardy.room';
   const PEER_PREFIX = 'jeop-ghostly-';
@@ -51,6 +51,8 @@
     { key: 'penalty', group: 'Punkte & Klauen', label: '➖ Abzug bei falscher Antwort', type: 'choice', default: 'half',
       choices: [['half', 'Halber Feldwert'], ['full', 'Voller Feldwert'], ['none', 'Kein Abzug']],
       hint: 'Gilt nicht für Daily Double, Final Jeopardy und den Joker „Doppelt oder nichts“ (dort steht der Einsatz auf dem Spiel).' },
+    { key: 'abstainPenalty', group: 'Punkte & Klauen', label: '🅰️ Keine Abgabe zählt wie falsch (Multiple Choice / Reihenfolge)', type: 'bool', default: false,
+      hint: 'An: wer bei Multiple Choice oder Reihenfolge nichts abgibt, verliert wie bei einer falschen Abgabe (Höhe nach „Abzug bei falscher Antwort“). Aus: keine Abgabe = 0. Schätzfragen bleiben ohne Abzug.' },
     { key: 'turn', group: 'Spielablauf', label: '🎯 „Am Zug“ / Reihenfolge', type: 'bool', default: true,
       hint: 'Aus: niemand ist am Zug, kein Banner. Joker „Weitergeben“ entfällt; „Doppelt oder nichts“ und „Tipp“ gehen dann nur noch für den Buzzer-Gewinner; beim Daily Double wählt der Host den Spieler.' },
     { key: 'pixelRace', group: 'Spielablauf', label: '🖼️ Buzzer-Rennen bei Verpixeln/Zoom', type: 'bool', default: true,
@@ -424,6 +426,16 @@
     } while (p.every((v, i) => v === i));
     return p;
   }
+  // Echte Zufallsmischung (darf auch unverändert bleiben) – für Multiple Choice. shufflePerm passt nicht:
+  // Bei zwei Optionen (Fakt/Fake) bliebe nur das Vertauschen, die Lösung stünde immer an Position B.
+  function randomPerm(n, rnd = Math.random) {
+    const p = [...Array(n).keys()];
+    for (let i = n - 1; i > 0; i--) {
+      const j = Math.floor(rnd() * (i + 1));
+      [p[i], p[j]] = [p[j], p[i]];
+    }
+    return p;
+  }
   // Gültige Abgabe: eine Permutation von 0..n-1 (Indizes der Original-Reihenfolge)
   const isPerm = (a, n) => Array.isArray(a) && a.length === n && [...a].sort((x, y) => x - y).every((v, i) => v === i);
   const orderCorrect = (a) => Array.isArray(a) && a.every((v, i) => v === i);
@@ -758,7 +770,7 @@
       teamSize: clampTeamSize(state.teamSize),
       turn: opt(set, state, 'turn') ? state.turn || null : null,
       // Spielregeln, die Spieler/TV kennen müssen (Joker-Leiste, „Am Zug“)
-      opts: Object.fromEntries(['jokerDouble', 'jokerHint', 'jokerPass', 'turn', 'penalty', 'stealHalf', 'reactions', 'qrTv', 'awards', 'soundDefault'].map((k) => [k, opt(set, state, k)])),
+      opts: Object.fromEntries(['jokerDouble', 'jokerHint', 'jokerPass', 'turn', 'penalty', 'abstainPenalty', 'stealHalf', 'reactions', 'qrTv', 'awards', 'soundDefault'].map((k) => [k, opt(set, state, k)])),
       finished: !!state.finished,
       // Statistik-Daten gehen nur raus, wenn Statistik oder Auszeichnungen sie anzeigen dürfen
       statsShown: !!state.statsShown && !!state.finished && opt(set, state, 'stats'),
@@ -1302,7 +1314,7 @@
     copyCategories, mixSets, parseSetFile, pickCategory, MAX_SET_FILE_BYTES,
     safeMedia, mediaTypeOf, mediaFileError, MEDIA_LIMITS,
     PIXEL_STEPS, ZOOM_STEPS, imgSteps, imgMode, pixelLevel, pixelate, zoomCrop,
-    CLUE_KINDS, isSpecialKind, parseNumber, estimateWinners, orderItems, shufflePerm, isPerm, orderCorrect, JOKERS, jokerInfo, jokerEnabled, activeJokers, jokerBlock, OPTION_DEFS, opt, effectiveOptions, cleanOptions, optionsLocked, whoIsUp, hintPattern, judgePoints,
+    CLUE_KINDS, isSpecialKind, parseNumber, estimateWinners, orderItems, shufflePerm, randomPerm, isPerm, orderCorrect, JOKERS, jokerInfo, jokerEnabled, activeJokers, jokerBlock, OPTION_DEFS, opt, effectiveOptions, cleanOptions, optionsLocked, whoIsUp, hintPattern, judgePoints,
     APP_VERSION, CATS, ROWS, ROUNDS, SET_KEY,
     pointsFor, defaultSet, normalizeSet, defaultState,
     loadSet, saveSet, loadState, normalizeState, saveState,

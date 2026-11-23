@@ -278,7 +278,7 @@
     const n = data.submitted.length;
     const mine = isPlayer && data.submitted.includes(me);
     const pen = J.penaltyFor(last.round, cur.row, last.opts && last.opts.penalty);
-    const risk = kind === 'estimate' || !pen ? '' : ` · Falsch kostet −${pen}`;
+    const risk = kind === 'estimate' || !pen ? '' : ` · Falsch${last.opts && last.opts.abstainPenalty ? ' oder keine Abgabe' : ''} kostet −${pen}`;
     st.textContent = (kind === 'estimate' ? `🔢 ${n}/${total} haben getippt` : kind === 'choice' ? `🅰️ ${n}/${total} haben gewählt${risk}` : `↕️ ${n}/${total} haben abgegeben${risk}`) +
       (mine && isTeamMode() && teamBy && teamBy !== myName ? ` · ${teamBy} hat für euch abgegeben` : '') +
       (mine ? (isTeamMode()
