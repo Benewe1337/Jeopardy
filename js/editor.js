@@ -183,6 +183,7 @@
       wrap.innerHTML = '';
       if (clue.img) {
         const thumb = document.createElement('img');
+        thumb.referrerPolicy = 'no-referrer';
         thumb.src = J.safeImg(clue.img);
         thumb.alt = '';
         const del = document.createElement('button');
@@ -217,6 +218,8 @@
         });
         zm.append(zbox, ' Zoom');
         wrap.append(thumb, del, px, zm);
+        const note = J.externalNotice(clue.img);
+        if (note) wrap.append(note);
         return;
       }
       const url = document.createElement('input');

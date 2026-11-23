@@ -111,6 +111,12 @@ async function startEnv(init = {}) {
       res.writeHead(404);
       return res.end();
     }
+    if (path.extname(file) === '.html') {
+      // Wie auf Pages: CSP kommt aus dem <meta> der Seite; nur der lokale Vermittlungsserver wird zusätzlich erlaubt
+      const html = fs.readFileSync(file, 'utf8').replace("connect-src 'self'", `connect-src 'self' http://127.0.0.1:${peerPort} ws://127.0.0.1:${peerPort}`);
+      res.writeHead(200, { 'content-type': TYPES['.html'] });
+      return res.end(html);
+    }
     res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream' });
     fs.createReadStream(file).pipe(res);
   });
@@ -135,6 +141,8 @@ async function startEnv(init = {}) {
     await ctx.route('https://img.example.com/**', (r) => r.fulfill({ body: TEST_PNG, contentType: 'image/png' }));
     await ctx.addInitScript(([port, vars]) => {
       Object.assign(window, vars);
+      // CSP-Verstöße sichtbar machen: landen als Konsolenfehler und damit in env.errors
+      document.addEventListener('securitypolicyviolation', (e) => console.error('CSP violation: ' + e.violatedDirective + ' ' + e.blockedURI));
       let P;
       Object.defineProperty(window, 'Peer', {
         configurable: true,
@@ -152,6 +160,7 @@ async function startEnv(init = {}) {
     }, [peerPort, { JEOP_COUNT_MS: 0, ...init, ...extraInit }]);
     const p = await ctx.newPage();
     p.on('pageerror', (e) => errors.push(e.message));
+    p.on('console', (m) => { if (m.type() === 'error' && /Content Security Policy|CSP violation|Refused to/.test(m.text())) errors.push(m.text()); });
     // Dialoge bestätigen; Tests können mit p.nextDialog die Eingabe für prompt() vorgeben
     p.on('dialog', (d) => { const a = p.nextDialog; p.nextDialog = undefined; d.accept(a); });
     return p;

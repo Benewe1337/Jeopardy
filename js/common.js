@@ -221,6 +221,22 @@
     return base;
   }
 
+  // Hostname einer externen (http/https) Adresse; '' bei hochgeladenen data:-Dateien
+  function externalHost(url) {
+    if (typeof url !== 'string' || !/^https?:\/\//i.test(url.trim())) return '';
+    try { return new URL(url.trim()).host; } catch (e) { return ''; }
+  }
+
+  // Editor-Hinweis (nur Anzeige) bei Bild/Clip von einem fremden Server; null bei Uploads/leer
+  function externalNotice(url) {
+    const host = externalHost(url);
+    if (!host) return null;
+    const el = document.createElement('div');
+    el.className = 'ed-external';
+    el.textContent = `Externer Link: Spieler laden das Bild direkt von ${host}`;
+    return el;
+  }
+
   // Nur Web-Adressen oder hochgeladene Bilder zulassen (kein javascript: o. ä.)
   function safeImg(v) {
     if (typeof v !== 'string') return '';
@@ -272,6 +288,7 @@
     return new Promise((resolve, reject) => {
       const url = URL.createObjectURL(file);
       const img = new Image();
+      img.referrerPolicy = 'no-referrer';
       img.onload = () => {
         const scale = Math.min(1, max / Math.max(img.width, img.height));
         const canvas = document.createElement('canvas');
@@ -441,6 +458,7 @@
   function zoomCrop(src, factor, at) {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      img.referrerPolicy = 'no-referrer';
       if (!/^data:/i.test(src)) img.crossOrigin = 'anonymous';
       img.onload = () => {
         const W = img.naturalWidth, H = img.naturalHeight;
@@ -538,6 +556,7 @@
   function pixelate(src, blocks) {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      img.referrerPolicy = 'no-referrer';
       if (!/^data:/i.test(src)) img.crossOrigin = 'anonymous';
       img.onload = () => {
         const scale = blocks / Math.max(img.naturalWidth, img.naturalHeight);
@@ -1413,7 +1432,7 @@
     pointsFor, defaultSet, normalizeSet, defaultState,
     loadSet, saveSet, loadState, normalizeState, saveState,
     exportGame, parseGame, MAX_GAME_FILE_BYTES,
-    roomCode, newRoomCode, ROOM_KEY, peerId, publicState, escapeHtml, safeColor, safeNum, renderScores,
+    externalHost, externalNotice, roomCode, newRoomCode, ROOM_KEY, peerId, publicState, escapeHtml, safeColor, safeNum, renderScores,
     THEMES, getTheme, applyTheme, setTheme,
     penaltyFor, stealFor, sfx, startTimerMusic, stopTimerMusic, timerMusicOn, soundOn, setSoundOn, setSoundDefault, unlockAudio, audioUnlocked, renderTimer,
     TIMER_MS: 15000,

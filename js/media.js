@@ -17,6 +17,7 @@
         info.textContent = (kind === 'video' ? '🎬 Video' : '🔊 Audio') + (/^data:/i.test(clue.media) ? ' (hochgeladen)' : ' (Link)');
         const el = document.createElement(kind === 'video' ? 'video' : 'audio');
         el.controls = true;
+        el.referrerPolicy = 'no-referrer';
         el.preload = 'none';
         el.src = clue.media;
         const del = document.createElement('button');
@@ -24,6 +25,8 @@
         del.textContent = '✕ Clip entfernen';
         del.addEventListener('click', () => { delete clue.media; delete clue.mediaType; persist(); draw(); });
         wrap.append(info, el, del);
+        const note = J.externalNotice(clue.media);
+        if (note) wrap.append(note);
         return;
       }
       const url = document.createElement('input');

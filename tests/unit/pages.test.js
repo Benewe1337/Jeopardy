@@ -76,3 +76,40 @@ test('jede lokal referenzierte Datei der Seiten liegt im Pages-Ordner', () => {
     fs.rmSync(out, { recursive: true, force: true });
   }
 });
+
+test('jede Seite hat die CSP per <meta>, identisch zu vercel.json (plus frame-ancestors dort)', () => {
+  const header = require('../../vercel.json').headers[0].headers.find((h) => h.key === 'Content-Security-Policy').value;
+  assert.match(header, /frame-ancestors 'none'/);
+  const base = header.replace('; frame-ancestors \'none\'', '');
+  for (const f of PAGES) {
+    const html = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    const m = html.match(/<meta http-equiv="Content-Security-Policy" content="([^"]+)">/);
+    assert.ok(m, `${f} ohne CSP-Meta`);
+    assert.equal(m[1], base, `${f}: CSP weicht von vercel.json ab`);
+  }
+  for (const d of ["script-src 'self'", "object-src 'none'", "base-uri 'none'"]) assert.ok(base.includes(d), d);
+  assert.ok(!/script-src[^;]*unsafe/.test(base));
+});
+
+test('keine Inline-Skripte und keine Inline-Event-Handler im HTML', () => {
+  for (const f of PAGES) {
+    const html = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
+      assert.match(m[1], /\bsrc=/, `${f}: Inline-Skript`);
+      assert.equal(m[2].trim(), '', `${f}: Skript mit src und Inhalt`);
+    }
+    assert.deepEqual([...html.matchAll(/\son[a-z]+\s*=/gi)].map((m) => m[0]), [], `${f}: Inline-Handler`);
+    assert.ok(!/href="javascript:/i.test(html), `${f}: javascript:-Link`);
+  }
+});
+
+test('Login-Seite der Middleware: kein Inline-Skript, CSP-Header gesetzt', async () => {
+  const { gate } = await import('../../middleware.js');
+  const res = await gate(new Request('https://x.test/'), 'pw');
+  const html = await res.text();
+  assert.ok(!/<script(?![^>]*\bsrc=)/.test(html));
+  assert.match(res.headers.get('content-security-policy'), /script-src 'self'/);
+  assert.match(res.headers.get('content-security-policy'), /frame-ancestors 'none'/);
+  // das eingebundene Theme-Skript muss ohne Login erreichbar sein
+  assert.equal(await gate(new Request('https://x.test/js/theme.js'), 'pw'), undefined);
+});

@@ -1702,3 +1702,4 @@ body.readonly .host-page { filter: grayscale(.6); }
 .tv-media.audio .tv-media-icon { display: block; }
 .tv-media-icon { display: none; font-size: 6vh; }
 .media-hint { text-align: center; font-size: 18px; opacity: .85; margin: 0 0 12px; }
+.ed-external { flex-basis: 100%; font-size: 11px; opacity: .75; overflow-wrap: anywhere; }

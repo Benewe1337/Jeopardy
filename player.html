@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * data: blob:; font-src 'self'; connect-src 'self' https://0.peerjs.com wss://0.peerjs.com; object-src 'none'; base-uri 'none'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Jeopardy</title>
   <link rel="stylesheet" href="css/style.css">
@@ -38,9 +39,9 @@
       <div class="timer-track"><div class="timer-fill"></div></div>
       <span class="timer-num"></span>
     </div>
-    <img class="clue-img" id="img" alt="" hidden>
+    <img class="clue-img" id="img" alt="" hidden referrerpolicy="no-referrer">
     <div class="tv-media" id="tvMediaBox" hidden>
-      <video id="tvMedia" playsinline preload="auto"></video>
+      <video id="tvMedia" referrerpolicy="no-referrer" playsinline preload="auto"></video>
       <div class="tv-media-icon">🔊</div>
     </div>
     <div class="media-hint" id="mediaHint" hidden>🔊 Clip läuft am TV</div>
