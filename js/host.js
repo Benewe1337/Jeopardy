@@ -140,7 +140,7 @@
       // Schätzfrage / Reihenfolge: alle geben am Handy ab, du löst auf
       if (kind === 'estimate') state.current.est = { guesses: {} };
       if (kind === 'order') state.current.ord = { perm: J.shufflePerm(J.orderItems(clue.a).length), answers: {} };
-      if (kind === 'choice') state.current.mc = { perm: J.shufflePerm(J.orderItems(clue.a).length), answers: {} };
+      if (kind === 'choice') state.current.mc = { perm: J.randomPerm(J.orderItems(clue.a).length), answers: {} };
       if (isDd) state.current.dd = J.dd.newDd(state.turn);
     });
     if (isDd) { sound('fanfare'); armDdReveal(); return; }
@@ -254,7 +254,10 @@
     // Schätzfrage: kein Abzug – da liegt fast jeder daneben, es zählt nur, wer am nächsten ist.
     const penalty = J.penaltyFor(cur.round, cur.row, rule('penalty'));
     const answers = cur.kind === 'choice' ? cur.mc.answers : cur.kind === 'order' ? cur.ord.answers : {};
-    const losers = Object.keys(answers).filter((id) => !winners.includes(id) && state.players.some((p) => p.id === id));
+    // Option „abstainPenalty“: wer bei MC/Reihenfolge nichts abgibt, zählt wie falsch (Schätzfrage nie)
+    const abstain = cur.kind !== 'estimate' && rule('abstainPenalty');
+    const losers = (abstain ? state.players.map((p) => p.id) : Object.keys(answers))
+      .filter((id) => !winners.includes(id) && state.players.some((p) => p.id === id));
     const label = [winners.length ? `${winners.map(nameOf).join(', ')} +${value}` : 'niemand richtig',
       losers.length ? `${losers.map(nameOf).join(', ')} −${penalty}` : ''].filter(Boolean).join(' · ');
     mutate(`Aufgelöst: ${label}`, () => {
@@ -307,9 +310,10 @@
     const head = cur.kind === 'estimate' ? `🔢 Schätzfrage – ${n}/${total} getippt`
       : cur.kind === 'choice' ? `🅰️ Multiple Choice – ${n}/${total} gewählt` : `↕️ Reihenfolge – ${n}/${total} abgegeben`;
     const pen = cur.dd ? value : J.penaltyFor(cur.round, cur.row, rule('penalty'));
+    const abstainTxt = rule('abstainPenalty') ? `−${pen}` : '0';
     const ruleText = cur.dd ? `Daily Double: richtig +${value}, falsch −${value} (voller Einsatz). Du kannst auch von Hand mit ✓/✗ werten` : cur.kind === 'estimate' ? `Wer am nächsten dran ist, bekommt +${value} (kein Abzug)`
-      : cur.kind === 'choice' ? `Richtig: +${value}, falsch: −${pen}, keine Abgabe: 0`
-        : `Komplett richtige Reihenfolge: +${value}, sonst −${pen}, keine Abgabe: 0`;
+      : cur.kind === 'choice' ? `Richtig: +${value}, falsch: −${pen}, keine Abgabe: ${abstainTxt}`
+        : `Komplett richtige Reihenfolge: +${value}, sonst −${pen}, keine Abgabe: ${abstainTxt}`;
     box.innerHTML = `<div class="special-head">${head}</div>${rows}` +
       (cur.revealed ? '' : `<div class="hint">${ruleText}. Abgaben lassen sich bis zum Auflösen ändern.</div>`);
   }

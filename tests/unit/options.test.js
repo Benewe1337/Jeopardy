@@ -20,7 +20,7 @@ test('Standard: ohne Optionen verhält sich alles wie bisher', () => {
   const eff = J.effectiveOptions(set, st);
   assert.deepEqual(plain(eff), {
     final: true, dd: true, ddRandom: false, jokerDouble: true, jokerHint: true, jokerPass: true,
-    steal: true, stealHalf: true, penalty: 'half', turn: true,
+    steal: true, stealHalf: true, penalty: 'half', abstainPenalty: false, turn: true,
     pixelRace: true, timer: true, timerSec: '15', intro: true, reactions: true, qrTv: true, media: true,
     stats: true, awards: true, soundDefault: true, backup: true,
   });
