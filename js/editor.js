@@ -343,7 +343,7 @@
     if (!(key in next)) return;
     const def = J.OPTION_DEFS.find((d) => d.key === key);
     const opts = { ...(set.options || {}), ...next };
-    if (opts[key] === def.default) delete opts[key];
+    if (opts[key] === def.default && !def.derivedDefault) delete opts[key];
     if (Object.keys(opts).length) set.options = opts; else delete set.options;
     persist();
     render();

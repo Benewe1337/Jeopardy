@@ -19,7 +19,10 @@
     }
     let group = null;
     let groupEl = null;
+    const matches = (cond) => Object.entries(cond).every(([k, v]) => cfg.value(k) === v);
     for (const d of J.OPTION_DEFS) {
+      // showIf/hideIf: Stellschrauben der Punkteverteilung erscheinen nur bei eingeschaltetem Hauptschalter
+      if ((d.showIf && !matches(d.showIf)) || (d.hideIf && matches(d.hideIf))) continue;
       if (d.group !== group) {
         group = d.group;
         groupEl = document.createElement('div');

@@ -5,6 +5,7 @@
   const $ = (id) => document.getElementById(id);
   // Wirksame Spielregel (Host > Set > Standard), z. B. rule('steal')
   const rule = (key) => J.opt(set, state, key);
+  const ruleOpts = () => J.effectiveOptions(set, state);
   JMedia.host({ $, conns: () => conns });
 
   // ---------- State-Änderungen mit Undo ----------
@@ -250,25 +251,41 @@
       winners = Object.keys(cur.ord.answers).filter((id) => J.orderCorrect(cur.ord.answers[id]));
     }
     winners = winners.filter((id) => state.players.some((p) => p.id === id));
+    // Schätzfrage mit Option „estimateRunnerUp“: Zweitnächster bekommt einen Anteil (nur bei genau einem Gewinner)
+    const runnerUps = cur.kind === 'estimate' && ruleOpts().splitScoring
+      ? J.estimateRunnerUps(cur.est.guesses, cur.est.answer).filter((id) => state.players.some((p) => p.id === id)) : [];
+    const ruPts = J.splitPoints(cur.round, cur.row, { opts: ruleOpts() }).runnerUp;
+    const rewards = runnerUps.length && ruPts > 0 ? runnerUps : [];
     // Multiple Choice und Reihenfolge: wer falsch abgegeben hat, verliert den halben Wert (wie sonst bei ✗).
     // Schätzfrage: kein Abzug – da liegt fast jeder daneben, es zählt nur, wer am nächsten ist.
-    const penalty = J.penaltyFor(cur.round, cur.row, rule('penalty'));
     const answers = cur.kind === 'choice' ? cur.mc.answers : cur.kind === 'order' ? cur.ord.answers : {};
     // Option „abstainPenalty“: wer bei MC/Reihenfolge nichts abgibt, zählt wie falsch (Schätzfrage nie)
     const abstain = cur.kind !== 'estimate' && rule('abstainPenalty');
     const losers = (abstain ? state.players.map((p) => p.id) : Object.keys(answers))
       .filter((id) => !winners.includes(id) && state.players.some((p) => p.id === id));
-    const label = [winners.length ? `${winners.map(nameOf).join(', ')} +${value}` : 'niemand richtig',
-      losers.length ? `${losers.map(nameOf).join(', ')} −${penalty}` : ''].filter(Boolean).join(' · ');
+    // Gewinn/Abzug je Spieler über J.splitPoints (am Zug: eigene Anteile)
+    const pts = (id) => J.splitPoints(cur.round, cur.row, { opts: ruleOpts(), active: id === state.turn });
+    const label = [winners.length ? winners.map((id) => `${nameOf(id)} +${pts(id).gain}`).join(', ') : 'niemand richtig',
+      rewards.length ? `${rewards.map((id) => `${nameOf(id)} +${ruPts}`).join(', ')} (Zweitnächster)` : '',
+      losers.length ? losers.map((id) => `${nameOf(id)} −${pts(id).penalty}`).join(', ') : ''].filter(Boolean).join(' · ');
     mutate(`Aufgelöst: ${label}`, () => {
-      if (cur.kind === 'estimate') cur.est.winners = winners;
+      if (cur.kind === 'estimate') { cur.est.winners = winners; cur.est.runnerUps = rewards; }
+      cur.pts = {};
       winners.forEach((id) => {
-        state.players.find((p) => p.id === id).score += value;
+        cur.pts[id] = pts(id).gain;
+        state.players.find((p) => p.id === id).score += pts(id).gain;
+        cur.judged[id] = 'right';
+        recordVerdict(id, 'right', false);
+      });
+      rewards.forEach((id) => {
+        cur.pts[id] = ruPts;
+        state.players.find((p) => p.id === id).score += ruPts;
         cur.judged[id] = 'right';
         recordVerdict(id, 'right', false);
       });
       losers.forEach((id) => {
-        state.players.find((p) => p.id === id).score -= penalty;
+        cur.pts[id] = -pts(id).penalty;
+        state.players.find((p) => p.id === id).score -= pts(id).penalty;
         cur.judged[id] = 'wrong';
         recordVerdict(id, 'wrong', false);
       });
@@ -303,15 +320,19 @@
       if (has && cur.kind === 'order') detail = (J.orderCorrect(answers[p.id]) ? '✓ ' : '✗ ') + answers[p.id].map((i) => items[i]).join(' → ');
       const won = cur.judged[p.id] === 'right';
       const lost = cur.judged[p.id] === 'wrong';
-      const pen = cur.dd ? value : J.penaltyFor(cur.round, cur.row, rule('penalty'));
-      return `<div class="srow${won ? ' won' : ''}${lost ? ' lost' : ''}"><span class="name">${J.escapeHtml(p.name)}</span><span>${J.escapeHtml(detail)}${won ? ` · +${value}` : ''}${lost ? ` · −${pen}` : ''}</span></div>`;
+      const sp = J.splitPoints(cur.round, cur.row, { opts: ruleOpts(), active: p.id === state.turn });
+      const done = cur.pts && p.id in cur.pts ? Math.abs(cur.pts[p.id]) : null; // beim Auflösen festgehalten (Zug wechselt danach)
+      const pen = cur.dd ? value : done != null ? done : sp.penalty;
+      const gainTxt = cur.dd ? value : done != null ? done : (cur.kind === 'estimate' && (cur.est.runnerUps || []).includes(p.id) ? sp.runnerUp : sp.gain);
+      const mark = !cur.dd && rule('splitScoring') && p.id === state.turn ? '🎯 ' : '';
+      return `<div class="srow${won ? ' won' : ''}${lost ? ' lost' : ''}"><span class="name">${mark}${J.escapeHtml(p.name)}</span><span>${J.escapeHtml(detail)}${won ? ` · +${gainTxt}` : ''}${lost ? ` · −${pen}` : ''}</span></div>`;
     }).join('');
     const total = cur.dd ? 1 : state.players.length;
     const head = cur.kind === 'estimate' ? `🔢 Schätzfrage – ${n}/${total} getippt`
       : cur.kind === 'choice' ? `🅰️ Multiple Choice – ${n}/${total} gewählt` : `↕️ Reihenfolge – ${n}/${total} abgegeben`;
     const pen = cur.dd ? value : J.penaltyFor(cur.round, cur.row, rule('penalty'));
     const abstainTxt = rule('abstainPenalty') ? `−${pen}` : '0';
-    const ruleText = cur.dd ? `Daily Double: richtig +${value}, falsch −${value} (voller Einsatz). Du kannst auch von Hand mit ✓/✗ werten` : cur.kind === 'estimate' ? `Wer am nächsten dran ist, bekommt +${value} (kein Abzug)`
+    const ruleText = cur.dd ? `Daily Double: richtig +${value}, falsch −${value} (voller Einsatz). Du kannst auch von Hand mit ✓/✗ werten` : cur.kind === 'estimate' ? `Wer am nächsten dran ist, bekommt +${value} (kein Abzug)${rule('splitScoring') ? ` – mit Punkteverteilung je nach Spieler (siehe unten)` : ''}`
       : cur.kind === 'choice' ? `Richtig: +${value}, falsch: −${pen}, keine Abgabe: ${abstainTxt}`
         : `Komplett richtige Reihenfolge: +${value}, sonst −${pen}, keine Abgabe: ${abstainTxt}`;
     box.innerHTML = `<div class="special-head">${head}</div>${rows}` +
@@ -593,7 +614,7 @@
     const solved = Object.values(judged).includes('right');
     // Geklaut: Hat schon jemand falsch geantwortet, gibt es für die richtige Antwort nur die Hälfte
     const stolen = Object.values(judged).includes('wrong');
-    const gain = stolen ? J.stealFor(cur.round, cur.row, rule('stealHalf')) : value;
+    const gain = J.splitPoints(cur.round, cur.row, { opts: ruleOpts(), active: false, stolen }).gain; // Buzzer-Status: Klau-Gewinn
     $('clueMeta').textContent = (cur.dd ? '⭐ Daily Double · ' : '') + `${cat.name} – ${cur.dd && cur.dd.wager != null ? 'Einsatz ' + cur.dd.wager : value}` + (cur.revealed ? ' · Antwort ist für Spieler sichtbar' : '');
     $('clueQ').textContent = clue.q;
     // Verpixelt: Host sieht dasselbe wie die Spieler (die Antwort steht ja darunter)
@@ -671,18 +692,23 @@
       const rowEl = document.createElement('div');
       const isWinner = (buzz.winner === p.id || (pass && pass.to === p.id && !buzz.winner)) && !verdict;
       const double = (jk.double || []).includes(p.id);
-      const { gain, penalty } = J.judgePoints(cur.round, cur.row, { stolen, double, penalty: rule('penalty'), stealHalf: rule('stealHalf') });
+      const active = p.id === state.turn;
+      const { gain, penalty } = J.judgePoints(cur.round, cur.row, { stolen, double, active, opts: ruleOpts() });
       rowEl.className = 'jrow' + (verdict ? ' ' + verdict : '') + (isWinner ? ' buzzed' : '');
       const name = document.createElement('span');
       name.className = 'name';
       name.textContent = (isWinner ? (buzz.winner === p.id ? '⚡ ' : '👉 ') : '') + p.name + (isWinner && isTeam() && buzz.winnerName ? ` (${buzz.winnerName})` : '')
-        + (double ? ' 🎲' : '') + ((jk.hint || []).includes(p.id) ? ' 💡' : '');
+        + (double ? ' 🎲' : '') + (rule('splitScoring') && rule('turn') && active ? ' 🎯' : '') + ((jk.hint || []).includes(p.id) ? ' 💡' : '');
       // Pro Frage: nur ein Spieler kann richtig liegen, jeder Spieler wird höchstens einmal gewertet.
       // Korrekturen gehen über „Rückgängig“.
       if (verdict) {
         const tag = document.createElement('span');
         tag.className = 'verdict';
-        tag.textContent = verdict === 'right' ? `✓ +${gain}` + (stolen ? ' (geklaut)' : '') : (penalty ? `✗ −${penalty}` : '✗ ±0');
+        // beim Werten festgehaltene Punkte (der Zug kann danach weitergewandert sein)
+        const got = cur.pts && p.id in cur.pts ? Math.abs(cur.pts[p.id]) : null;
+        const shownGain = got != null ? got : gain;
+        const shownPen = got != null ? got : penalty;
+        tag.textContent = verdict === 'right' ? `✓ +${shownGain}` + (stolen ? ' (geklaut)' : '') : (shownPen ? `✗ −${shownPen}` : '✗ ±0');
         rowEl.append(name, tag);
         judge.appendChild(rowEl);
         return;
@@ -690,11 +716,12 @@
       const ok = document.createElement('button');
       ok.className = 'green small';
       ok.textContent = `✓ +${gain}`;
-      if (stolen) ok.title = rule('stealHalf') ? 'Geklaut: halbe Punkte' : 'Geklaut: voller Feldwert';
+      if (stolen) ok.title = `Geklaut: ${J.splitPoints(cur.round, cur.row, { opts: ruleOpts(), stolen }).gain} Punkte`;
       ok.disabled = solved;
       ok.addEventListener('click', () => {
         mutate(`${p.name} richtig (+${gain}${stolen ? ', geklaut' : ''})`, () => {
           p.score += gain;
+          (state.current.pts = state.current.pts || {})[p.id] = gain;
           state.current.judged[p.id] = 'right';
           recordVerdict(p.id, 'right', stolen);
           state.current.buzz = closedBuzz();
@@ -712,6 +739,7 @@
         let opened = false;
         mutate(`${p.name} falsch (${penalty ? '−' + penalty : '±0'})`, () => {
           p.score -= penalty;
+          (state.current.pts = state.current.pts || {})[p.id] = -penalty;
           state.current.judged[p.id] = 'wrong';
           recordVerdict(p.id, 'wrong', false);
           state.current.timer = null;

@@ -33,7 +33,8 @@ const FINAL = 's.final = { category: "K", q: "FQ", a: "FA", note: "" };';
 test('Panel: Standardwerte, Abhängigkeiten, Sperre nach dem ersten Feld, Reset, Neuladen behält', async () => {
   const { host } = await openHost(env, { names: ['Anna'] });
   await openOpts(host);
-  const n = await host.evaluate(() => J.OPTION_DEFS.length);
+  // Stellschrauben der Punkteverteilung sind bei ausgeschaltetem Hauptschalter ausgeblendet (showIf)
+  const n = await host.evaluate(() => J.OPTION_DEFS.filter((d) => !d.showIf).length);
   assert.equal(await host.locator('#optionsList input, #optionsList select').count(), n);
   for (const k of ['final', 'dd', 'jokerDouble', 'jokerHint', 'jokerPass', 'steal', 'stealHalf', 'turn']) {
     assert.equal(await host.isChecked('#opt-' + k), true, k + ' standardmäßig an');

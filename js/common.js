@@ -6,7 +6,7 @@
   const SET_KEY = 'jeopardy.set';
   // Bei jeder Änderung am Spiel-Code hochzählen: Handys mit anderem Stand laden sich dann neu,
   // statt z. B. neue Fragearten falsch anzuzeigen.
-  const APP_VERSION = '2026-11-23.1';
+  const APP_VERSION = '2026-11-23.2';
   const STATE_KEY = 'jeopardy.state';
   const ROOM_KEY = 'jeopardy.room';
   const PEER_PREFIX = 'jeop-ghostly-';
@@ -32,6 +32,7 @@
   // EINE Liste für Editor (Voreinstellung im Set: set.options) und Host-Pult (Überschreibung pro Spiel:
   // state.options). Auflösung: Host > Set > default (opt()). Neue Optionen = nur ein Eintrag hier.
   // requires: wird nur wirksam, wenn die genannten Optionen den Wert haben (sonst gilt „aus“ bzw. default).
+  const SHARE_CHOICES = [['100', '100 %'], ['75', '75 %'], ['50', '50 %'], ['25', '25 %'], ['0', '0 %']];
   const OPTION_DEFS = [
     { key: 'final', group: 'Finale & Daily Double', label: '⭐ Final Jeopardy', type: 'bool', default: true,
       hint: 'Aus: kein Final-Jeopardy-Knopf, kein Ablauf.' },
@@ -47,7 +48,30 @@
     { key: 'steal', group: 'Punkte & Klauen', label: '🔔 Klauen per Buzzer nach falscher Antwort', type: 'bool', default: true,
       hint: 'Aus: nach ✗ öffnet der Buzzer nicht automatisch, der Host kann ihn auch nicht mehr für Klau-Versuche öffnen.' },
     { key: 'stealHalf', group: 'Punkte & Klauen', label: '½ Halbe Punkte für geklaute Fragen', type: 'bool', default: true,
-      requires: { steal: true }, requiresHint: 'Braucht „Klauen“.', hint: 'Aus: Geklaut zählt der volle Feldwert.' },
+      requires: { steal: true }, requiresHint: 'Braucht „Klauen“.', hint: 'Aus: Geklaut zählt der volle Feldwert.',
+      hideIf: { splitScoring: true } },
+    // Punkteverteilung: Hauptschalter + Stellschrauben (nur sichtbar, wenn der Schalter an ist). Aus = wie bisher.
+    // stealHalf ist bei eingeschalteter Punkteverteilung ausgeblendet; stealShare übernimmt (Standard aus stealHalf).
+    { key: 'splitScoring', group: 'Punkte & Klauen', label: '⚖️ Punkteverteilung anpassen', type: 'bool', default: false,
+      hint: 'Aus: alle Punkte wie bisher.' },
+    { key: 'turnShare', group: 'Punkte & Klauen', label: '🎯 Punkte für den, der am Zug ist', type: 'choice', default: '100',
+      choices: SHARE_CHOICES, showIf: { splitScoring: true }, requires: { splitScoring: true, turn: true }, requiresHint: 'Braucht „Am Zug“.',
+      hint: 'Anteil des Feldwerts für richtige Antworten des Spielers/Teams, das am Zug ist.' },
+    { key: 'otherShare', group: 'Punkte & Klauen', label: '👥 Punkte für alle anderen Richtigen', type: 'choice', default: '100',
+      choices: SHARE_CHOICES, showIf: { splitScoring: true }, requires: { splitScoring: true },
+      hint: 'Anteil des Feldwerts für richtige Antworten aller anderen (ohne „Am Zug“: für alle).' },
+    { key: 'otherPenalty', group: 'Punkte & Klauen', label: '➖ Abzug für alle anderen bei falsch', type: 'choice', default: 'same',
+      choices: [['same', 'Wie bei „Abzug bei falscher Antwort“'], ['half', 'Die Hälfte davon'], ['none', 'Kein Abzug']],
+      showIf: { splitScoring: true }, requires: { splitScoring: true },
+      hint: 'Wer am Zug ist, behält den normalen Abzug (auch bei „Keine Abgabe zählt wie falsch“).' },
+    { key: 'estimateRunnerUp', group: 'Punkte & Klauen', label: '🔢 Schätzfrage: Zweitnächster bekommt', type: 'choice', default: '0',
+      choices: [['0', 'Nichts'], ['25', '25 % des Feldwerts'], ['50', '50 % des Feldwerts']],
+      showIf: { splitScoring: true }, requires: { splitScoring: true },
+      hint: 'Nur wenn es genau einen Gewinner gibt; bei Gleichstand auf Platz 1 gibt es keinen Zweitnächsten.' },
+    { key: 'stealShare', group: 'Punkte & Klauen', label: '🔔 Punkte für geklaute Fragen', type: 'choice', default: '100', derivedDefault: true,
+      choices: [['100', '100 % (voller Feldwert)'], ['75', '75 %'], ['50', '50 % (halber Feldwert)'], ['25', '25 %']],
+      showIf: { splitScoring: true }, requires: { splitScoring: true, steal: true }, requiresHint: 'Braucht „Klauen“.',
+      hint: 'Ersetzt „Halbe Punkte für geklaute Fragen“; vorbelegt mit dessen Wert.' },
     { key: 'penalty', group: 'Punkte & Klauen', label: '➖ Abzug bei falscher Antwort', type: 'choice', default: 'half',
       choices: [['half', 'Halber Feldwert'], ['full', 'Voller Feldwert'], ['none', 'Kein Abzug']],
       hint: 'Gilt nicht für Daily Double, Final Jeopardy und den Joker „Doppelt oder nichts“ (dort steht der Einsatz auf dem Spiel).' },
@@ -101,13 +125,25 @@
     const def = OPTION_BY_KEY[key];
     if (!def) return undefined;
     for (const [k, v] of Object.entries(def.requires || {})) {
-      if (opt(set, state, k) !== v) return def.type === 'bool' ? false : def.default;
+      if (opt(set, state, k) !== v) return def.type === 'bool' ? false : optDefault(set, state, def);
     }
     const so = state && state.options;
     if (so && validOptionValue(def, so[key])) return so[key];
     const se = set && set.options;
     if (se && validOptionValue(def, se[key])) return se[key];
+    return optDefault(set, state, def);
+  }
+  // Standard einer Option; stealShare folgt dem (ggf. überschriebenen) stealHalf
+  function optDefault(set, state, def) {
+    if (def.key === 'stealShare') return rawBool(set, state, 'stealHalf') === false ? '100' : '50';
     return def.default;
+  }
+  function rawBool(set, state, key) {
+    const so = state && state.options;
+    if (so && typeof so[key] === 'boolean') return so[key];
+    const se = set && set.options;
+    if (se && typeof se[key] === 'boolean') return se[key];
+    return OPTION_BY_KEY[key].default;
   }
   const effectiveOptions = (set, state) => Object.fromEntries(OPTION_DEFS.map((d) => [d.key, opt(set, state, d.key)]));
 
@@ -327,12 +363,58 @@
     }).join(' ')).join('   ');
   }
 
-  // Punkte unter Berücksichtigung von „Doppelt oder nichts“
-  // rules: { penalty: half|full|none, stealHalf: bool } – ohne Angabe die Standardregeln
-  function judgePoints(round, row, { stolen, double, penalty, stealHalf }) {
+  // Punkteverteilung: die EINE Stelle, an der Gewinn/Abzug eines Spielers/Teams berechnet wird.
+  // o: { opts (wirksame Optionen), active (ist am Zug), stolen, double }
+  // → { gain (richtig), penalty (falsch/keine Abgabe), runnerUp (Zweitnächster bei Schätzfragen) }
+  // Ohne Hauptschalter splitScoring gilt exakt die alte Formel (stealHalf, penalty).
+  // Doppelt oder nichts bleibt unberührt: Gewinn doppelt (bei Klauen mit dem Klau-Anteil), Verlust = Feldwert.
+  const pct = (value, p) => Math.round((value * p) / 100);
+  function splitPoints(round, row, o) {
+    const opts = o.opts || {};
     const value = pointsFor(round, row);
-    const gain = stolen ? stealFor(round, row, stealHalf) : value;
-    return double ? { gain: gain * 2, penalty: value } : { gain, penalty: penaltyFor(round, row, penalty) };
+    const split = opts.splitScoring === true;
+    const stealPct = split ? Number(opts.stealShare) : opts.stealHalf === false ? 100 : 50;
+    let gain = o.stolen ? pct(value, stealPct) : value;
+    let penalty = penaltyFor(round, row, opts.penalty);
+    let runnerUp = 0;
+    if (split) {
+      const turnOn = opts.turn !== false;
+      const active = !!o.active && turnOn;
+      if (!o.stolen) gain = pct(value, Number(active ? opts.turnShare : opts.otherShare));
+      if (!active) penalty = opts.otherPenalty === 'none' ? 0 : opts.otherPenalty === 'half' ? pct(penalty, 50) : penalty;
+      runnerUp = pct(value, Number(opts.estimateRunnerUp) || 0);
+    }
+    if (o.double) return { gain: (o.stolen ? pct(value, stealPct) : value) * 2, penalty: value, runnerUp };
+    return { gain, penalty, runnerUp };
+  }
+
+  // Punkte unter Berücksichtigung von „Doppelt oder nichts“ (Kurzform von splitPoints)
+  // rules: { stolen, double, penalty: half|full|none, stealHalf: bool } – oder { opts, active } für die Punkteverteilung
+  function judgePoints(round, row, rules) {
+    const { stolen, double, penalty, stealHalf, active } = rules;
+    const { gain, penalty: pen } = splitPoints(round, row, { opts: rules.opts || { penalty, stealHalf }, active, stolen, double });
+    return { gain, penalty: pen };
+  }
+
+  // Eine Zeile für Handy/TV, wenn die Punkteverteilung vom Standard abweicht (sonst ''); kind = Fragenart
+  function splitLine(opts, round, row, kind) {
+    if (!opts || opts.splitScoring !== true) return '';
+    const share = (v) => (Number(v) === 100 ? 'volle Punkte' : `${Number(v)} %`);
+    const turnOn = opts.turn !== false;
+    const parts = [];
+    if (turnOn && (Number(opts.turnShare) !== 100 || Number(opts.otherShare) !== 100)) {
+      parts.push(`Am Zug: ${share(opts.turnShare)}`, `alle anderen: ${share(opts.otherShare)}`);
+    } else if (!turnOn && Number(opts.otherShare) !== 100) {
+      parts.push(`Richtige: ${share(opts.otherShare)}`);
+    }
+    if (opts.otherPenalty && opts.otherPenalty !== 'same') {
+      const act = splitPoints(round, row, { opts, active: true }).penalty;
+      const oth = splitPoints(round, row, { opts, active: false }).penalty;
+      const fmt = (n) => (n ? `−${n}` : 'nichts');
+      parts.push(turnOn && act !== oth ? `Falsch: am Zug ${fmt(act)}, andere ${fmt(oth)}` : `Falsch kostet ${fmt(oth)}`);
+    }
+    if (kind === 'estimate' && Number(opts.estimateRunnerUp) > 0) parts.push(`Zweitnächster: ${Number(opts.estimateRunnerUp)} %`);
+    return parts.join(' · ');
   }
 
   // ---------- Verpixelte Bilder ----------
@@ -410,6 +492,17 @@
     if (!ids.length || !Number.isFinite(answer)) return [];
     const best = Math.min(...ids.map((id) => Math.abs(guesses[id] - answer)));
     return ids.filter((id) => Math.abs(guesses[id] - answer) === best);
+  }
+
+  // Zweitnächster Tipp: nur bei genau einem Gewinner; bei Gleichstand auf Platz 2 alle Gleichplatzierten
+  function estimateRunnerUps(guesses, answer) {
+    const ids = Object.keys(guesses).filter((id) => Number.isFinite(guesses[id]));
+    if (!Number.isFinite(answer) || estimateWinners(guesses, answer).length !== 1) return [];
+    const d = (id) => Math.abs(guesses[id] - answer);
+    const rest = ids.filter((id) => d(id) > Math.min(...ids.map(d)));
+    if (!rest.length) return [];
+    const second = Math.min(...rest.map(d));
+    return rest.filter((id) => d(id) === second);
   }
 
   // Reihenfolge: Antwort „A | B | C | D“ in richtiger Reihenfolge
@@ -676,6 +769,7 @@
       guesses: cur.revealed ? guesses : null,
       answer: cur.revealed ? (e.answer != null ? e.answer : null) : null,
       winners: cur.revealed ? e.winners || [] : [],
+      runnerUps: cur.revealed ? e.runnerUps || [] : [],
     };
   }
   // Reihenfolge: gemischte Begriffe; Lösung und Abgaben erst nach dem Auflösen
@@ -770,7 +864,7 @@
       teamSize: clampTeamSize(state.teamSize),
       turn: opt(set, state, 'turn') ? state.turn || null : null,
       // Spielregeln, die Spieler/TV kennen müssen (Joker-Leiste, „Am Zug“)
-      opts: Object.fromEntries(['jokerDouble', 'jokerHint', 'jokerPass', 'turn', 'penalty', 'abstainPenalty', 'stealHalf', 'reactions', 'qrTv', 'awards', 'soundDefault'].map((k) => [k, opt(set, state, k)])),
+      opts: Object.fromEntries(['jokerDouble', 'jokerHint', 'jokerPass', 'turn', 'penalty', 'abstainPenalty', 'stealHalf', 'splitScoring', 'turnShare', 'otherShare', 'otherPenalty', 'estimateRunnerUp', 'stealShare', 'reactions', 'qrTv', 'awards', 'soundDefault'].map((k) => [k, opt(set, state, k)])),
       finished: !!state.finished,
       // Statistik-Daten gehen nur raus, wenn Statistik oder Auszeichnungen sie anzeigen dürfen
       statsShown: !!state.statsShown && !!state.finished && opt(set, state, 'stats'),
@@ -1314,7 +1408,7 @@
     copyCategories, mixSets, parseSetFile, pickCategory, MAX_SET_FILE_BYTES,
     safeMedia, mediaTypeOf, mediaFileError, MEDIA_LIMITS,
     PIXEL_STEPS, ZOOM_STEPS, imgSteps, imgMode, pixelLevel, pixelate, zoomCrop,
-    CLUE_KINDS, isSpecialKind, parseNumber, estimateWinners, orderItems, shufflePerm, randomPerm, isPerm, orderCorrect, JOKERS, jokerInfo, jokerEnabled, activeJokers, jokerBlock, OPTION_DEFS, opt, effectiveOptions, cleanOptions, optionsLocked, whoIsUp, hintPattern, judgePoints,
+    CLUE_KINDS, isSpecialKind, parseNumber, estimateWinners, estimateRunnerUps, orderItems, shufflePerm, randomPerm, isPerm, orderCorrect, JOKERS, jokerInfo, jokerEnabled, activeJokers, jokerBlock, OPTION_DEFS, opt, effectiveOptions, cleanOptions, optionsLocked, whoIsUp, hintPattern, judgePoints, splitPoints, splitLine, optDefault,
     APP_VERSION, CATS, ROWS, ROUNDS, SET_KEY,
     pointsFor, defaultSet, normalizeSet, defaultState,
     loadSet, saveSet, loadState, normalizeState, saveState,
