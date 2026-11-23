@@ -48,6 +48,13 @@
     return json;
   }
 
+  // Connection id = first 32 hex chars of SHA-256(key); only this browser knows the key, so no
+  // one else can send as (or read for) this connection. The relay verifies the pair.
+  async function idFromKey(key) {
+    const h = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(key)));
+    return [...h.slice(0, 16)].map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   class Emitter {
@@ -118,6 +125,7 @@
       this.takeover = !!(options && options.takeover);
       this.token = hostToken(room);
       this.conns = new Map();
+      this.gate = new Map();
       this.destroyed = false;
       this.disconnected = true;
       this.cursor = -1;
@@ -175,6 +183,7 @@
     _incoming(id, body) {
       if (!id || !body) return;
       let c = this.conns.get(id);
+      if (!this._allow(id, body.t === 'open' || !c)) return;
       if (body.t === 'open') {
         if (c) c._closed();
         c = new HostConn(this, id);
@@ -192,6 +201,24 @@
       c.lastSeen = Date.now();
       if (body.t === 'data') c.emit('data', body.d);
       else if (body.t === 'close') c._closed();
+    }
+    // Flood guard for 'open' and for messages from unknown ids (each would cost the host a new
+    // connection or a reply): a small token bucket per id. Known connections are rate-limited
+    // by the host itself (onData). The table is bounded.
+    _allow(id, costly) {
+      if (!costly) return true;
+      let b = this.gate.get(id);
+      if (!b) {
+        if (this.gate.size > 500) this.gate.clear();
+        b = { tokens: 5, last: Date.now() };
+        this.gate.set(id, b);
+      }
+      const t = Date.now();
+      b.tokens = Math.min(5, b.tokens + ((t - b.last) / 1000) * 0.5);
+      b.last = t;
+      if (b.tokens < 1) return false;
+      b.tokens -= 1;
+      return true;
     }
     _sweep() {
       const limit = Date.now() - CONN_TIMEOUT_MS;
@@ -239,20 +266,22 @@
       super();
       this.peer = peer;
       this.room = room;
-      this.id = randomId(16);
+      this.key = randomId(32);
+      this.id = null; // derived from the key in _start
       this.open = false;
       this.closed = false;
       this.cursor = -1;
       this.hostSeenAt = 0;
       this.abort = new AbortController();
-      this.outbox = new Outbox(() => ({ room, as: this.id }));
+      this.outbox = new Outbox(() => ({ room, as: this.id, key: this.key }));
       this._start();
     }
     async _start() {
       let first = true;
+      this.id = await idFromKey(this.key);
       while (!this.closed) {
         try {
-          const res = await api('poll', { room: this.room, as: this.id, after: this.cursor, wait: first ? 0 : WAIT_MS }, this.abort.signal);
+          const res = await api('poll', { room: this.room, as: this.id, key: this.key, after: this.cursor, wait: first ? 0 : WAIT_MS }, this.abort.signal);
           if (this.closed) return;
           this.cursor = res.seq;
           if (res.host) this.hostSeenAt = Date.now();
@@ -291,11 +320,11 @@
     send(data) { if (this.open) this.outbox.push({ body: { t: 'data', d: data } }); }
     close() {
       if (this.closed) return;
-      this._sendClose();
+      if (this.id) this._sendClose();
       this._end(false);
     }
     _sendClose() {
-      const payload = JSON.stringify({ room: this.room, as: this.id, msgs: [{ body: { t: 'close' } }] });
+      const payload = JSON.stringify({ room: this.room, as: this.id, key: this.key, msgs: [{ body: { t: 'close' } }] });
       try {
         if (navigator.sendBeacon && navigator.sendBeacon(`${API}?op=send`, new Blob([payload], { type: 'application/json' }))) return;
       } catch (e) {}

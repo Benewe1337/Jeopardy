@@ -112,3 +112,15 @@ test('pgThrottle: Schema lazy, Parameter statt Werte, Sperre aus Antwortzeile', 
   assert.equal(calls.filter((c) => c.text.startsWith('CREATE TABLE IF NOT EXISTS jeop_throttle')).length, 1);
   assert.ok(calls.every((c) => !c.text.includes('host:abc')));
 });
+
+test('hit(): Zähler pro Fenster mit Gewicht, kein Lockout', async () => {
+  let t = 0;
+  const th = memoryThrottle({ now: () => t });
+  assert.equal((await th.hit('k', { limit: 10, windowMs: 1000, weight: 6 })).allowed, true);
+  assert.equal((await th.hit('k', { limit: 10, windowMs: 1000, weight: 4 })).allowed, true);
+  const over = await th.hit('k', { limit: 10, windowMs: 1000 });
+  assert.equal(over.allowed, false);
+  assert.equal(over.retryAfter, 1);
+  t = 1000;
+  assert.equal((await th.hit('k', { limit: 10, windowMs: 1000 })).allowed, true, 'neues Fenster');
+});

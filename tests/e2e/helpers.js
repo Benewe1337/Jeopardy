@@ -58,7 +58,8 @@ function readBody(req) {
   });
 }
 
-async function startEnv(init = {}) {
+// opts.throttle: relay with a real rate/room throttle (only the flood test wants it)
+async function startEnv(init = {}, opts = {}) {
   const webPort = await freePort();
   const peerPort = await freePort();
   let relay = null;
@@ -68,11 +69,12 @@ async function startEnv(init = {}) {
     const { handleRelay } = await import('../../lib/relay-core.mjs');
     const { memoryStore } = await import('../../lib/relay-stores.mjs');
     const store = memoryStore();
+    const throttle = opts.throttle ? (await import('../../lib/throttle.mjs')).memoryThrottle() : undefined;
     relay = async (req, res) => {
       const u = new URL(req.url, 'http://x');
       const rawBody = req.method === 'POST' ? await readBody(req) : '';
       const headers = { get: (k) => req.headers[k.toLowerCase()] ?? null };
-      const { status, json } = await handleRelay({ method: req.method, query: u.searchParams, headers, rawBody }, store, HOST_PASSWORD);
+      const { status, json } = await handleRelay({ method: req.method, query: u.searchParams, headers, rawBody }, store, HOST_PASSWORD, throttle);
       res.writeHead(status, { 'content-type': 'application/json' });
       res.end(JSON.stringify(json));
     };
