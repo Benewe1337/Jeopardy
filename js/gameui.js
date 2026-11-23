@@ -87,7 +87,7 @@
     wrap.innerHTML = games.map((g) => `
       <div class="game-item" data-room="${J.escapeHtml(g.room)}">
         <div><strong>${J.escapeHtml(g.title || 'Ohne Titel')}</strong>${g.finished ? ' · beendet' : ''}<br>
-          <small>Raum ${J.escapeHtml(g.room)} · Runde ${g.round + 1} · ${g.players} Spieler · ${ago(g.updated)}${g.room === currentRoom ? ' · läuft hier' : ''}</small></div>
+          <small>Raum ${J.escapeHtml(g.room)} · Runde ${J.safeNum(g.round) + 1} · ${J.safeNum(g.players)} Spieler · ${ago(g.updated)}${g.room === currentRoom ? ' · läuft hier' : ''}</small></div>
         <div class="btn-row">
           ${g.room === currentRoom ? '' : '<button class="small primary" data-act="resume">Fortsetzen</button>'}
           <button class="small ghost" data-act="drop">Verwerfen</button>

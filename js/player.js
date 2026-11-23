@@ -64,7 +64,7 @@
       for (let c = 0; c < s.categories.length; c++) {
         const used = s.used[c][row];
         const active = s.current && s.current.cat === c && s.current.row === row;
-        html += `<div class="cell val${used ? ' used' : ''}${active ? ' active' : ''}" style="--i:${row * s.categories.length + c}">${s.values[row]}</div>`;
+        html += `<div class="cell val${used ? ' used' : ''}${active ? ' active' : ''}" style="--i:${row * s.categories.length + c}">${J.safeNum(s.values[row])}</div>`;
       }
     }
     board.innerHTML = html;
@@ -153,7 +153,7 @@
     $('ddSub').textContent = dd.phase === 'reveal' ? (p ? `${p.name} ist am Zug` : '') : p ? `${p.name} setzt …` : 'Der Host wählt, wer spielt';
     J.renderScores($('ddScores'), s.players, dd.pid);
     const body = $('ddBody');
-    const bk = dd.phase + ':' + (mineTurn ? 'me' : 'view') + ':' + dd.max;
+    const bk = dd.phase + ':' + (mineTurn ? 'me' : 'view') + ':' + J.safeNum(dd.max);
     if (bk !== ddBuilt) {
       ddBuilt = bk;
       body.innerHTML = '';
@@ -170,6 +170,8 @@
 
   function ddWagerForm(dd) {
     const team = isTeamMode();
+    // Host-Daten sind nicht vertrauenswürdig: nur endliche Zahlen in Markup
+    dd = { ...dd, min: J.safeNum(dd.min), max: J.safeNum(dd.max) };
     const f = document.createElement('form');
     f.className = 'fj-form';
     f.noValidate = true;
@@ -604,7 +606,7 @@
         if (team) {
           const n = (members[p.id] || []).length;
           b.innerHTML = `<span class="pick-name"><i class="team-dot" style="--team:${J.safeColor(p.color)}"></i>${J.escapeHtml(p.name)}</span>` +
-            `<span class="pick-count">${n}/${last.teamSize}</span>`;
+            `<span class="pick-count">${n}/${J.safeNum(last.teamSize)}</span>`;
         } else {
           b.textContent = p.name;
         }

@@ -2,9 +2,10 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * data: blob:; font-src 'self'; connect-src 'self' https://0.peerjs.com wss://0.peerjs.com; object-src 'none'; base-uri 'none'; form-action 'self'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Jeopardy Host</title>
-  <script>try{document.documentElement.dataset.theme=localStorage.getItem("jeopardy.theme")||"graphit"}catch(e){}</script>
+  <script src="js/theme.js"></script>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="host">
@@ -31,9 +32,9 @@
       <section class="host-clue" id="clue">
         <div class="meta" id="clueMeta"></div>
         <div class="q" id="clueQ"></div>
-        <img class="clue-img host-img" id="clueImg" alt="" hidden>
+        <img class="clue-img host-img" id="clueImg" alt="" hidden referrerpolicy="no-referrer">
         <div class="media-box" id="mediaBox" hidden>
-          <video class="host-media" id="hostMedia" playsinline preload="auto" hidden></video>
+          <video class="host-media" id="hostMedia" referrerpolicy="no-referrer" playsinline preload="auto" hidden></video>
           <div class="media-ctrl">
             <button class="small" id="mediaPlay">▶ Abspielen</button>
             <button class="small" id="mediaRestart">↺ Von vorn</button>

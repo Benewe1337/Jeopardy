@@ -11,7 +11,9 @@ export const COOKIE = 'jeop_auth';
 export const LOGIN_PATH = '/__login';
 const MAX_AGE = 60 * 60 * 24 * 30;
 // Styles and fonts are needed by the login page itself and contain nothing secret.
-const PUBLIC_PREFIXES = ['/css/', '/fonts/', '/favicon'];
+const PUBLIC_PREFIXES = ['/css/', '/fonts/', '/favicon', '/js/theme.js'];
+// Same policy as vercel.json (middleware responses don't get the static headers).
+const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * data: blob:; font-src 'self'; connect-src 'self' https://0.peerjs.com wss://0.peerjs.com; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 
 const SESSION_VERSION = 'v1';
 const enc = new TextEncoder();
@@ -77,7 +79,7 @@ function loginPage(next, failed, retryAfter) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
   <title>Jeopardy – Passwort</title>
-  <script>try{document.documentElement.dataset.theme=localStorage.getItem("jeopardy.theme")||"graphit"}catch(e){}</script>
+  <script src="/js/theme.js"></script>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -100,6 +102,7 @@ function loginPage(next, failed, retryAfter) {
     status: retryAfter ? 429 : failed ? 401 : 200,
     headers: {
       'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex',
+      'content-security-policy': CSP,
       ...(retryAfter ? { 'retry-after': String(retryAfter) } : {}),
     },
   });

@@ -408,6 +408,15 @@ test('normalizeSet behält Daily-Double-Felder, Medien und Final-Jeopardy-Daten 
   assert.equal(n.options.ddRandom, true);
 });
 
+test('externalHost nennt den Host externer Links, nicht von Uploads', () => {
+  assert.equal(J.externalHost('https://example.com/a/b.png?x=1'), 'example.com');
+  assert.equal(J.externalHost('  http://cdn.example.org:8080/x.mp3 '), 'cdn.example.org:8080');
+  assert.equal(J.externalHost('data:image/png;base64,AAAA'), '');
+  assert.equal(J.externalHost('javascript:alert(1)'), '');
+  assert.equal(J.externalHost(''), '');
+  assert.equal(J.externalHost(null), '');
+});
+
 test('clampReaction: Handy-Wert nur wenn <= Host-Zeit und nicht zu früh', () => {
   const { J } = loadCommon();
   assert.equal(J.clampReaction(300, 800), 300);
