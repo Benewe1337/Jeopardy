@@ -134,7 +134,7 @@ test('Spieler kann nicht als fremde Verbindung senden oder lesen', async () => {
 });
 
 test('Räume pro IP begrenzt, Reload eines bestehenden Raums zählt nicht, andere IP unberührt', async () => {
-  const { memoryThrottle } = await import('../../lib/throttle.mjs');
+  const { memoryThrottle } = await import('../../lib/throttle.cjs');
   const { LIMITS } = await import('../../lib/relay-core.mjs');
   let t = 0;
   const store = memoryStore();
@@ -152,7 +152,7 @@ test('Räume pro IP begrenzt, Reload eines bestehenden Raums zählt nicht, ander
 });
 
 test('Nachrichten pro Verbindung und pro IP begrenzt (429), Host nie', async () => {
-  const { memoryThrottle } = await import('../../lib/throttle.mjs');
+  const { memoryThrottle } = await import('../../lib/throttle.cjs');
   const { LIMITS } = await import('../../lib/relay-core.mjs');
   const th = memoryThrottle({ now: () => 0 });
   const call = client(memoryStore(), th);

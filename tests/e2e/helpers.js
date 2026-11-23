@@ -69,7 +69,7 @@ async function startEnv(init = {}, opts = {}) {
     const { handleRelay } = await import('../../lib/relay-core.mjs');
     const { memoryStore } = await import('../../lib/relay-stores.mjs');
     const store = memoryStore();
-    const throttle = opts.throttle ? (await import('../../lib/throttle.mjs')).memoryThrottle() : undefined;
+    const throttle = opts.throttle ? (await import('../../lib/throttle.cjs')).memoryThrottle() : undefined;
     relay = async (req, res) => {
       const u = new URL(req.url, 'http://x');
       const rawBody = req.method === 'POST' ? await readBody(req) : '';

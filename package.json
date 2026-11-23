@@ -9,6 +9,7 @@
     "test:e2e:relay": "E2E_TRANSPORT=relay node --test --test-concurrency=1 \"tests/e2e/**/*.test.js\""
   },
   "devDependencies": {
+    "esbuild": "^0.27.0",
     "jsqr": "^1.4.0",
     "node-turn": "0.0.6",
     "peer": "1.0.2",

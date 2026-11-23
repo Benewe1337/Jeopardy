@@ -1,11 +1,11 @@
 // Vercel Routing Middleware: simple shared-password gate in front of the whole site.
-// Imports lib/throttle.mjs and @neondatabase/serverless (Vercel bundles them with the middleware).
+// Imports lib/throttle.cjs and @neondatabase/serverless (Vercel bundles them with the middleware).
 // The password comes from the JEOPARDY_PASSWORD environment variable; the cookie holds an
 // HMAC-signed session token (key derived from the password), so changing the password logs
-// everyone out. Login attempts are throttled per IP (lib/throttle.mjs).
+// everyone out. Login attempts are throttled per IP (lib/throttle.cjs).
 
 import { neon } from '@neondatabase/serverless';
-import { clientKey, memoryThrottle, pgThrottle } from './lib/throttle.mjs';
+import { clientKey, memoryThrottle, pgThrottle } from './lib/throttle.cjs';
 
 export const COOKIE = 'jeop_auth';
 export const LOGIN_PATH = '/__login';

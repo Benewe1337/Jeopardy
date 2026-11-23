@@ -1,10 +1,10 @@
-// Passwort-Drosselung (lib/throttle.mjs) und ihre Anbindung an die Host-Passwort-Prüfung
+// Passwort-Drosselung (lib/throttle.cjs) und ihre Anbindung an die Host-Passwort-Prüfung
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
 let memoryThrottle, pgThrottle, clientKey, THROTTLE, checkHostPassword, handleSets, memorySetStore, handleGame, memoryGameStore, handleRelay, memoryStore;
 test.before(async () => {
-  ({ memoryThrottle, pgThrottle, clientKey, THROTTLE } = await import('../../lib/throttle.mjs'));
+  ({ memoryThrottle, pgThrottle, clientKey, THROTTLE } = await import('../../lib/throttle.cjs'));
   ({ checkHostPassword } = await import('../../lib/host-auth.mjs'));
   ({ handleSets, memorySetStore } = await import('../../lib/sets-core.mjs'));
   ({ handleGame, memoryGameStore } = await import('../../lib/game-core.mjs'));
