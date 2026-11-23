@@ -538,7 +538,7 @@
   let deviceId = null;
   try { deviceId = localStorage.getItem(DEVICE_KEY); } catch (e) {}
   if (!deviceId) {
-    deviceId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    deviceId = J.newDeviceId();
     try { localStorage.setItem(DEVICE_KEY, deviceId); } catch (e) {}
   }
   let pickerError = '';
