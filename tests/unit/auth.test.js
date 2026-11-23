@@ -2,9 +2,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-let gate, tokenFor, COOKIE;
+let gate, signSession, verifySession, safeNext, COOKIE, memoryThrottle;
 test.before(async () => {
-  ({ gate, tokenFor, COOKIE } = await import('../../middleware.js'));
+  ({ gate, signSession, verifySession, safeNext, COOKIE } = await import('../../middleware.js'));
+  ({ memoryThrottle } = await import('../../lib/throttle.mjs'));
 });
 
 const PW = 'geheim';
@@ -35,7 +36,9 @@ test('Richtiges Passwort setzt Cookie und leitet weiter', async () => {
   assert.equal(res.status, 303);
   assert.equal(res.headers.get('location'), '/player.html?room=ABC');
   const cookie = res.headers.get('set-cookie');
-  assert.match(cookie, new RegExp(`^${COOKIE}=${await tokenFor(PW)};`));
+  const token = cookie.match(new RegExp(`^${COOKIE}=([^;]+);`))[1];
+  assert.equal(await verifySession(token, PW), true);
+  assert.ok(!token.includes(PW));
   assert.match(cookie, /HttpOnly/);
   assert.match(cookie, /Secure/);
 });
@@ -57,10 +60,10 @@ test('Weiterleitung nur auf eigene Seiten', async () => {
 });
 
 test('Gültiges Cookie lässt durch, falsches nicht', async () => {
-  const good = { headers: { cookie: `a=b; ${COOKIE}=${await tokenFor(PW)}` } };
+  const good = { headers: { cookie: `a=b; ${COOKIE}=${await signSession(PW)}` } };
   assert.equal(await gate(req('/host.html', good), PW), undefined);
   assert.equal(await gate(req('/api/relay?op=ping', good), PW), undefined);
-  const old = { headers: { cookie: `${COOKIE}=${await tokenFor('altes-passwort')}` } };
+  const old = { headers: { cookie: `${COOKIE}=${await signSession('altes-passwort')}` } };
   assert.equal((await gate(req('/host.html', old), PW)).status, 200);
 });
 
@@ -94,4 +97,52 @@ test('Login-Weiterleitung lässt keine fremden Ziele zu', async () => {
     const login = await gate(req('/__login', { method: 'POST', body }), PW);
     assert.equal(login.headers.get('location'), '/');
   }
+});
+
+test('Session-Token: signieren, prüfen, Ablauf, Manipulation, falsches Passwort', async () => {
+  const t0 = 1_700_000_000_000;
+  const token = await signSession(PW, t0);
+  assert.match(token, /^v1\.\d+\.\d+\.[0-9a-f]{64}$/);
+  assert.equal(await verifySession(token, PW, t0 + 1000), true);
+  assert.equal(await verifySession(token, PW, t0 + 29 * 86400_000), true);
+  assert.equal(await verifySession(token, PW, t0 + 31 * 86400_000), false, 'abgelaufen');
+  assert.equal(await verifySession(token, 'anderes', t0 + 1000), false, 'Passwort geändert');
+  const [v, iat, exp, sig] = token.split('.');
+  const later = `${v}.${iat}.${Number(exp) + 86400 * 365}.${sig}`;
+  assert.equal(await verifySession(later, PW, t0 + 1000), false, 'Ablaufdatum manipuliert');
+  assert.equal(await verifySession(`${v}.${iat}.${exp}.${sig.replace(/.$/, sig.endsWith('0') ? '1' : '0')}`, PW, t0 + 1000), false, 'Signatur manipuliert');
+  assert.equal(await verifySession(token, PW, t0 - 3600_000), false, 'aus der Zukunft');
+  for (const bad of [null, '', 'abc', 'v1.1.2.zz', `${token}x`]) assert.equal(await verifySession(bad, PW, t0), false);
+  // altes Cookie-Format (SHA-256 des Passworts) ist ungültig
+  const old = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('jeopardy-gate:' + PW)))].map((b) => b.toString(16).padStart(2, '0')).join('');
+  assert.equal(await verifySession(old, PW), false);
+  assert.equal((await gate(req('/host.html', { headers: { cookie: `${COOKIE}=${old}` } }), PW)).status, 200);
+});
+
+test('safeNext: nur schlichte eigene Pfade', () => {
+  for (const ok of ['/', '/host.html', '/player.html?room=ABC123', '/a/b-c_d.e~f?x=1&y=%20+z']) assert.equal(safeNext(ok), ok);
+  for (const bad of [
+    '/\t/evil.example', '/\n/evil.example', '/\r/evil.example', '/\\evil.example', '//evil.example', '/\\/evil.example',
+    '///evil.example', 'https://evil.example', 'evil.example', '/%09/evil.example', '/%2F/evil.example', '/ x', '/a b',
+    '/a\u0000b', '/a#frag', '/a?x=<b>', '/a?x=1\n', '/x\n', '', null, undefined, 5, '/a?' + 'b'.repeat(3000),
+  ]) assert.equal(safeNext(bad), '/', JSON.stringify(bad));
+});
+
+test('Login wird pro IP gedrosselt: Sperre nach 5 Fehlversuchen, richtiges Passwort setzt zurück', async () => {
+  let t = 0;
+  const throttle = memoryThrottle({ now: () => t });
+  const post = (password, ip = '1.1.1.1') => gate(req('/__login', {
+    method: 'POST', body: new URLSearchParams({ password, next: '/' }), headers: { 'x-forwarded-for': ip },
+  }), PW, throttle);
+  for (let i = 0; i < 5; i++) assert.equal((await post('falsch')).status, 401);
+  const locked = await post('falsch');
+  assert.equal(locked.status, 429);
+  assert.equal(locked.headers.get('retry-after'), '60');
+  assert.equal(locked.headers.get('set-cookie'), null);
+  assert.equal((await post(PW)).status, 429, 'auch das richtige Passwort wird während der Sperre nicht geprüft');
+  assert.equal((await post('falsch', '2.2.2.2')).status, 401, 'andere IP unberührt');
+  t = 61_000;
+  assert.equal((await post(PW)).status, 303, 'nach der Sperre geht es wieder');
+  for (let i = 0; i < 5; i++) await post('falsch');
+  assert.equal((await post('falsch')).status, 429, 'Zähler nach Erfolg zurückgesetzt, neue Sperre');
 });

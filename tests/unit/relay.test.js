@@ -34,12 +34,16 @@ test('Host belegt Raum, fremder Token wird abgewiesen, gleicher Token darf neu a
   assert.equal((await call('host', { room: 'abc123', token: HOST })).status, 200, 'Reload des Hosts');
 });
 
-test('Verwaister Raum kann nach einer Minute übernommen werden', async () => {
+test('Stiller Raum bleibt gesperrt: fremder Token bekommt nie den Raum, der Host schon', async () => {
   let t = 0;
   const call = client(memoryStore({ now: () => t }));
   await call('host', { room: 'ABC123', token: HOST });
-  t = 61_000;
-  assert.equal((await call('host', { room: 'ABC123', token: 'other-token-xxxxx' })).status, 200);
+  for (const wait of [61_000, 3600_000, 24 * 3600_000]) {
+    t = wait;
+    assert.equal((await call('host', { room: 'ABC123', token: 'other-token-xxxxx' })).status, 409, `nach ${wait} ms`);
+    assert.equal((await call('poll', { room: 'ABC123', as: 'host', token: 'other-token-xxxxx', after: 0 })).status, 403);
+  }
+  assert.equal((await call('host', { room: 'ABC123', token: HOST })).status, 200, 'Host kehrt nach langer Pause zurück');
 });
 
 test('Nachrichten laufen gezielt und als Rundsendung, Cursor überspringt nichts', async () => {
