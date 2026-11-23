@@ -25,7 +25,8 @@
   overlay.hidden = true;
   overlay.innerHTML = `
     <div class="ro-card" role="alertdialog" aria-labelledby="roTitle">
-      <h2 id="roTitle">Dieses Spiel läuft jetzt auf einem anderen Gerät</h2>
+      <h2 id="roTitle">Raum wurde übernommen</h2>
+      <p><strong>Dieses Spiel läuft jetzt auf einem anderen Gerät.</strong></p>
       <p>Hier lässt sich nichts mehr ändern. Du kannst das Spiel wieder hierher holen – dann übernimmt dieses Fenster und das andere wird zur Ansicht.</p>
       <div class="btn-row">
         <button class="primary" id="roTake">Hier wieder übernehmen</button>
